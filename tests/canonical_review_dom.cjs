@@ -35,6 +35,7 @@ function page(template, query='', delayDeploymentScript=false) {
    requests.push(url);
    if(url==='/api/analyze'||url.endsWith('/discovery'))return {ok:true,json:async()=>structuredClone(result)};
    if(url.endsWith('/salesforce/frontend')){if(options.method==='PUT')savedFrontendUrl=JSON.parse(options.body).frontend_url;return {ok:true,json:async()=>({frontend_url:savedFrontendUrl})};}
+   if(url.endsWith('/salesforce/records'))return {ok:true,json:async()=>({record_digest:'b'.repeat(64),record_count:206,object:'DIP__c',external_id:'Dip_Id__c',fields:['Name','Dip_Id__c']})};
    if(url.endsWith('/salesforce/permissions'))return {ok:true,json:async()=>({deployment_enabled:permissionsEnabled,message:permissionsEnabled?'CLI ready':'CLI unavailable',review_digest:'a'.repeat(64),frontend_url:savedFrontendUrl,objects:[{object:'Incident__c',allowRead:'true',allowCreate:'true',allowEdit:'true',allowDelete:'false',modifyAllRecords:'false',viewAllRecords:'false'}],fields:[{field:'Incident__c.Ticket__c',readable:'true',editable:'true'}],org_alias:'hackfest-developer',permission_set:'TestAccess',application:'TestApp'})};
    if(url.endsWith('/salesforce/validate')||url.endsWith('/salesforce/deploy')){assert.equal(options.headers['X-LifeAfterCode-Release'],'1');releaseAction=url.split('/').pop();releaseCalls.push({action:releaseAction,...JSON.parse(options.body)});return {ok:true,json:async()=>({job_id:'job1',status:'queued'})};}
    if(url.endsWith('/salesforce/jobs/job1'))return {ok:true,json:async()=>({job_id:'job1',status:releaseFails?'failed':releaseAction==='validate'?'validated':'deployed',log:releaseFails?'Permission validation failed':'Operation verified'})};
@@ -133,6 +134,16 @@ const change=(element,value,event='change')=>{element.value=value;element.listen
  assert.equal(releaseCalls.at(-1).assign_to_current_user,true);
  assert.equal(actionable.elements.deploySalesforce.disabled,true,'deployment consumes validation in the UI');
  assert.match(actionable.elements.releaseNotice.textContent,/Deployment succeeded/);
+ actionable.elements.syncProcedureRecords.checked=true;
+ await actionable.trigger('validateSalesforce','click');
+ assert.equal(releaseCalls.at(-1).sync_records,false,'validation must never write procedure records');
+ assert.equal(actionable.elements.syncProcedureRecords.checked,true,'unchanged record sync consent survives saving for validation');
+ await actionable.trigger('deploySalesforce','click');
+ assert.equal(releaseCalls.at(-1).sync_records,true);
+ assert.equal(releaseCalls.at(-1).record_digest,'b'.repeat(64));
+ actionable.run('changed()');
+ assert.equal(actionable.elements.syncProcedureRecords.checked,false,'changing the review invalidates record sync consent');
+
  // A saved review must validate again without touching any approval dropdown.
  await actionable.trigger('validateSalesforce','click');
  assert.equal(releaseCalls.at(-1).action,'validate');

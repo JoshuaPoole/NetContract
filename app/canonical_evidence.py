@@ -5,6 +5,7 @@ locations, entity concepts and proposed types to the original immutable scan.
 """
 from .canonical_entities import group_canonical_entities
 from .contract_classification import classify_models
+from .procedure_catalog import IDENTITIES
 from .intermediate_representation import evidence_reference, RepositoryIR
 from .reviewed_metadata import ReviewedCanonicalPlan
 
@@ -41,6 +42,10 @@ def validate_plan_against_ir(plan: ReviewedCanonicalPlan, ir: RepositoryIR) -> N
                 raise ValueError(f"Unverified field evidence: {field.source}")
             if field.data_type != source_field.proposed_type:
                 raise ValueError(f"Field type differs from scan; explicit mapping review required: {field.source}")
+            if field.external_id and (entity.concept != 'DIP' or field.data_type != 'Text'
+                    or field.source.rsplit('.', 1)[-1] not in IDENTITIES
+                    or source_field.evidence.kind != 'json_catalog'):
+                raise ValueError('External IDs require a reviewed text procedure identity from a catalog')
             if field.pii_candidate != source_field.pii_candidate:
                 raise ValueError(f"Privacy signal differs from scan: {field.source}")
             if field.source in used_sources:

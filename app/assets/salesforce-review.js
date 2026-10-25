@@ -31,7 +31,12 @@ function renderReview(plan, saved) {
   section.append(decision(entity.status,value=>{entity.status=value;},entity.concept+' entity decision'));
   appendText(section,'p','Source models: '+entity.source_representations.join(', ')); appendText(section,'small',entity.evidence.join(' · '));
   const wrapper=document.createElement('div'); wrapper.className='scroll'; const table=document.createElement('table'); const head=document.createElement('thead'); const heading=document.createElement('tr'); ['Source field','Salesforce field','Type','PI candidate','Evidence','Decision'].forEach(text=>appendText(heading,'th',text)); head.append(heading); table.append(head); const body=document.createElement('tbody');
-  for (const field of entity.fields) { const row=document.createElement('tr'); appendText(row,'td',field.source.split('.').pop());row.children[0].setAttribute('title',field.source); const cell=document.createElement('td'); const target=document.createElement('input'); target.value=field.target; target.setAttribute('aria-label',field.source+' Salesforce target'); target.addEventListener('input',()=>{field.target=target.value;changed();}); cell.append(target);row.append(cell);appendText(row,'td',field.data_type);appendText(row,'td',field.pii_candidate?'Review':'No name signal');appendText(row,'td',field.evidence); const state=document.createElement('td');state.append(decision(field.status,value=>{field.status=value;},field.source+' field decision'));row.append(state);body.append(row); }
+  for (const field of entity.fields) { const row=document.createElement('tr'); appendText(row,'td',field.source.split('.').pop());row.children[0].setAttribute('title',field.source); const cell=document.createElement('td'); const target=document.createElement('input'); target.value=field.target; target.setAttribute('aria-label',field.source+' Salesforce target'); target.addEventListener('input',()=>{field.target=target.value;changed();}); cell.append(target);row.append(cell);const typeCell = appendText(row,'td',field.data_type);
+   if (entity.concept === 'DIP' && field.evidence.includes('#') && ['procedure_id','dip_id','mop_id','sop_id','runbook_id','id'].includes(field.source.split('.').pop()) && field.data_type === 'Text') {
+    const label=document.createElement('label'); const key=document.createElement('input'); key.type='checkbox'; key.checked=!!field.external_id;
+    key.setAttribute('aria-label',field.source+' unique external ID'); key.addEventListener('change',()=>{field.external_id=key.checked;changed();});
+    label.append(key); appendText(label,'span','Unique external ID for record updates'); typeCell.append(label);
+   }appendText(row,'td',field.pii_candidate?'Review':'No name signal');appendText(row,'td',field.evidence); const state=document.createElement('td');state.append(decision(field.status,value=>{field.status=value;},field.source+' field decision'));row.append(state);body.append(row); }
   table.append(body);wrapper.append(table);section.append(wrapper);$('reviewEntities').append(section);
  }
  $('saveReview').disabled=!plan.entities.length; $('exportMetadata').disabled=!saved || !approvedFields();
@@ -51,6 +56,8 @@ function updateReviewSummary() {
 async function saveCanonicalReview() {
  if (!projectId || !reviewPlan || releaseBusy || reviewSaving) return false;
  if (frontendDirty || frontendSaving) { $('releaseNotice').textContent='Save the frontend URL first, then check the reviewed mappings.'; return false; }
+ const selectedRecordSync = $('syncProcedureRecords').checked;
+ const selectedRecordDigest = recordSnapshot?.record_digest;
  reviewSaved = false;
  reviewSaving = true;
  invalidateBrowserDeployment();
@@ -68,6 +75,7 @@ async function saveCanonicalReview() {
   $('exportMetadata').disabled = !approvedFields();
   reviewSaved = true;
   if (approvedFields()) await refreshPermissionMatrix();
+  if (selectedRecordSync && selectedRecordDigest && recordSnapshot?.record_digest === selectedRecordDigest && requestedProject === projectId && requestRevision === revision) $('syncProcedureRecords').checked = true;
   return requestedProject === projectId && requestRevision === revision;
  } catch (error) {
   if (requestedProject === projectId && requestRevision === revision) $('reviewNotice').textContent = error.message;

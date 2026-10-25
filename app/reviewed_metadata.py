@@ -15,6 +15,7 @@ class ReviewedField(BaseModel):
     source: str
     target: str
     data_type: str = "Text"
+    external_id: bool = False
     evidence: str
     pii_candidate: bool = False
     status: str = "review"
@@ -62,7 +63,7 @@ def build_reviewed_analysis(plan: ReviewedCanonicalPlan) -> Analysis:
             if not any(field.source.startswith(name + ".") for name in entity.source_representations):
                 raise ValueError(f"Field is not linked to a reviewed source representation: {field.source}")
             approved_fields.append(FieldMapping(
-                source=field.source, target=field.target, data_type=field.data_type,
+                source=field.source, target=field.target, data_type=field.data_type, external_id=field.external_id,
                 evidence=field.evidence, pii=field.pii_candidate, status="approved",
             ))
         if approved_fields:

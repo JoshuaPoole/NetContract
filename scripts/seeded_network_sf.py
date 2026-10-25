@@ -58,7 +58,7 @@ def apply(value, approval, executable):
             print(json.dumps(receipt), flush=True)
             if (receipt['state'] != 'JobComplete' or str(receipt['failed']) != '0'
                     or str(receipt['processed']) != str(len(batch['rows']))):
-                raise RuntimeError('Import is incomplete or has failures. Retain the printed job ID, inspect Salesforce results, and retry the same reviewed keys; success is not assumed.')
+                raise RuntimeError('Import is incomplete or has failures. Inspect this job before retrying the same keys: ' + json.dumps(receipt))
     return receipts
 
 

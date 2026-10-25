@@ -6,6 +6,7 @@ class FieldMapping(BaseModel):
     source: str
     target: str
     data_type: str = "Text"
+    external_id: bool = False
     pii: bool = False
     status: Literal["review", "approved", "rejected"] = "review"
     evidence: str = ""

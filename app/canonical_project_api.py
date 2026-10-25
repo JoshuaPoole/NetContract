@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from .canonical_entities import group_canonical_entities
+from .procedure_catalog import IDENTITIES
 from .canonical_evidence import validate_plan_against_ir
 from .contract_classification import classify_models
 from .intermediate_representation import evidence_reference, RepositoryIR
@@ -53,6 +54,7 @@ def canonical_candidates(project_id: str):
         fields = [ReviewedField(
             source=field.source, target=field.proposed_target,
             data_type=field.proposed_type, pii_candidate=field.pii_candidate,
+            external_id=candidate.concept == "DIP" and field.evidence.kind == "json_catalog" and field.proposed_type == "Text" and field.source.rsplit(".", 1)[-1] in IDENTITIES,
             evidence=evidence_reference(field.evidence),
         ) for node in ir.nodes if node.kind == "model_candidate"
             and (node.name, node.evidence.source_file) in representations
@@ -68,7 +70,10 @@ def canonical_candidates(project_id: str):
             # source pointer retained. Catalog records keep every original path.
             unique = {}
             for field in fields:
-                unique.setdefault((field.source.rsplit('.', 1)[-1], field.data_type), field)
+                key = field.source.rsplit('.', 1)[-1]
+                identity_key = ('procedure_identity' if key in IDENTITIES else key, field.data_type)
+                if identity_key not in unique or (field.external_id and not unique[identity_key].external_id):
+                    unique[identity_key] = field
             entities[-1].fields = list(unique.values())
     plan = ReviewedCanonicalPlan(
         repository=ir.repository, repository_id=original["repository_id"], entities=entities,

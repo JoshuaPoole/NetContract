@@ -1,4 +1,5 @@
 let permissionSnapshot = null;
+let recordSnapshot = null;
 let permissionRequest = 0;
 let releaseBusy = false;
 let releaseValidated = false;
@@ -11,6 +12,7 @@ function updateReleaseButtons() {
  $('validateSalesforce').disabled = reviewSaving || releaseBusy || frontendDirty || frontendSaving || !approvedFields();
  $('deploySalesforce').disabled = !ready || !releaseValidated;
  $('assignPermissionSet').disabled = releaseBusy;
+ $('syncProcedureRecords').disabled = releaseBusy || !recordSnapshot || !reviewSaved;
  $('saveAndValidate').disabled = reviewSaving || releaseBusy || frontendDirty || frontendSaving || !approvedFields();
  $('frontendUrl').disabled = releaseBusy || frontendSaving;
  $('saveFrontend').disabled = releaseBusy || frontendSaving;
@@ -18,6 +20,9 @@ function updateReleaseButtons() {
 function invalidateBrowserDeployment() {
  permissionRequest++;
  permissionSnapshot = null;
+ recordSnapshot = null;
+ $('syncProcedureRecords').checked = false;
+ $('recordSyncNotice').textContent = 'Save the Procedure review to preview record updates.';
  releaseValidated = false;
  $('objectPermissions').replaceChildren();
  $('fieldPermissions').replaceChildren();
@@ -37,6 +42,16 @@ async function refreshPermissionMatrix() {
   const result = await readResponse(await fetch('/api/projects/' + encodeURIComponent(projectId) + '/salesforce/permissions'));
   if (requestedProject !== projectId || requestRevision !== revision || requestNumber !== permissionRequest) return;
   permissionSnapshot = result;
+  try {
+   const records = await readResponse(await fetch('/api/projects/' + encodeURIComponent(projectId) + '/salesforce/records'));
+   if (requestedProject !== projectId || requestRevision !== revision || requestNumber !== permissionRequest) return;
+   recordSnapshot = records;
+   $('recordSyncNotice').textContent = records.record_count + ' records → ' + records.object + ' · match by ' + records.external_id + ' · fields: ' + records.fields.join(', ');
+  } catch (error) {
+   if (requestedProject !== projectId || requestRevision !== revision || requestNumber !== permissionRequest) return;
+   recordSnapshot = null;
+   $('recordSyncNotice').textContent = error.message;
+  }
   releaseValidated = false;
   const access = value => value === 'true' ? 'Yes' : 'No';
   $('objectPermissions').replaceChildren();
@@ -73,6 +88,8 @@ async function startSalesforceRelease(action) {
  }
  const requestedProject = projectId, requestRevision = revision;
  const snapshot = permissionSnapshot;
+ const syncRecords = action === 'deploy' && $('syncProcedureRecords').checked;
+ if (syncRecords && !recordSnapshot) { $('releaseNotice').textContent='Save the review and inspect the record preview before syncing.'; return; }
  const assignment = action === 'deploy' && $('assignPermissionSet').checked;
  releaseValidated = false;
  freezeReview(true);
@@ -82,7 +99,7 @@ async function startSalesforceRelease(action) {
   const base = '/api/projects/' + encodeURIComponent(projectId) + '/salesforce/';
   let job = await readResponse(await fetch(base + action, {
    method: 'POST', headers: {'Content-Type': 'application/json', 'X-LifeAfterCode-Release': '1'},
-   body: JSON.stringify({org_alias: snapshot.org_alias, review_digest: snapshot.review_digest, assign_to_current_user: assignment}),
+   body: JSON.stringify({org_alias: snapshot.org_alias, review_digest: snapshot.review_digest, assign_to_current_user: assignment, sync_records: syncRecords, record_digest: syncRecords ? recordSnapshot.record_digest : null}),
   }));
   while (job.status === 'queued' || job.status === 'running') {
    await new Promise(resolve => setTimeout(resolve, 1000));
@@ -91,11 +108,11 @@ async function startSalesforceRelease(action) {
   }
   if (requestedProject !== projectId || requestRevision !== revision) return;
   $('releaseLog').textContent = job.log || '';
-  if (job.status === 'failed') throw new Error('Salesforce did not confirm success. See the operation result below.');
+  if (job.status === 'failed') throw new Error(job.schema_deployed ? 'Schema deployed, but procedure record sync failed. Inspect the operation result before retrying.' : 'Salesforce did not confirm success. See the operation result below.');
   if (action === 'validate' && job.status !== 'validated') throw new Error('Unexpected validation result; validate again before deployment.');
   if (action === 'deploy' && job.status !== 'deployed') throw new Error('Deployment was not confirmed. Check Salesforce before retrying.');
   releaseValidated = job.status === 'validated';
-  $('releaseNotice').textContent = releaseValidated ? 'Validation succeeded. Deployment is now available for this saved review.' : 'Deployment succeeded and approved fields were verified.';
+  $('releaseNotice').textContent = releaseValidated ? 'Validation succeeded. Deployment is now available for this saved review.' : (syncRecords ? 'Schema deployed and reviewed procedure records synced successfully.' : 'Deployment succeeded and approved fields were verified. Record sync was not selected.');
  } catch (error) {
   if (requestedProject === projectId && requestRevision === revision) $('releaseNotice').textContent = error.message;
  } finally {

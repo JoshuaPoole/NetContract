@@ -107,6 +107,11 @@ def generate_metadata(
                 "Checkbox": "<defaultValue>false</defaultValue>",
             }.get(typ, "")
 
+            if field.external_id:
+                if typ != 'Text':
+                    raise ValueError('External IDs require Text fields')
+                details += '<externalId>true</externalId><unique>true</unique>'
+
             field_label = field_name.removesuffix("__c").replace("_", " ")
 
             (root / "fields" / f"{field_name}.field-meta.xml").write_text(

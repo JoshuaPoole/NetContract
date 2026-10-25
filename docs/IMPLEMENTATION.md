@@ -46,3 +46,7 @@ The repository inventory discovers supported seed JSON without executing generat
 ## Unified procedure discovery and Salesforce review
 
 `procedure_catalog.py` parses supported structured catalogs into one procedure concept while retaining source kind, original record and JSON pointer. The IR carries real catalog field evidence into canonical schema review. The Salesforce page lists discovered procedure data, offers an evidence export and labels the shared DIP-compatible entity as Procedure. Arrays/nested data use reviewed LongTextArea metadata. No data import or pipeline execution is implicit; old saved scans require rescanning.
+
+## Approved builder data sync
+
+Procedure field review now includes an explicit unique external-ID flag. The browser previews a server-derived record plan and can opt into syncing only approved source fields after confirmed schema deployment. The existing bulk upsert/preflight helper handles writes; partial success retains the schema outcome. Runtime remains local/CLI-authenticated until an AWS service adapter is configured. See BUILDER_RECORD_SYNC.md.

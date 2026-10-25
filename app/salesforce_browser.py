@@ -42,6 +42,8 @@ class ReleaseRequest(BaseModel):
     org_alias: Literal['hackfest-developer'] = ORG_ALIAS
     review_digest: str = Field(pattern=r'^[a-f0-9]{64}$')
     assign_to_current_user: bool = False
+    sync_records: bool = False
+    record_digest: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
 def local_request(request):
@@ -174,6 +176,20 @@ def run_job(identifier, bundle):
         arguments = (bundle, job['action'] == 'deploy', job['assign_to_current_user'])
         output = (execute_release(*arguments, frontend_url=job['frontend_url'])
                   if job['frontend_url'] else execute_release(*arguments))
+        if job['action'] == 'deploy':
+            job['schema_deployed'] = True
+            job['log'] = output
+        if job.get('sync_records'):
+            from .procedure_sync import record_plan
+            from scripts.seeded_network_sf import apply
+            records = record_plan(job['project_id'])
+            _, latest = permission_snapshot(job['project_id'])
+            if latest['review_digest'] != job['review_digest'] or records['review_digest'] != job['record_digest']:
+                raise RuntimeError('Schema deployed, but review changed before record sync; no record sync started')
+            job['schema_deployed'] = True
+            job['log'] = output + '\nSchema deployed. Starting reviewed record sync.'
+            receipts = apply(records, records['review_digest'], shutil.which('sf.cmd') or shutil.which('sf'))
+            output += '\nProcedure record sync confirmed: ' + json.dumps(receipts)
         with STATE_LOCK:
             job['status'] = 'deployed' if job['action'] == 'deploy' else 'validated'
             job['log'] = output
@@ -182,13 +198,23 @@ def run_job(identifier, bundle):
     except (OSError, ValueError, RuntimeError, HTTPException, subprocess.TimeoutExpired) as exc:
         with STATE_LOCK:
             job['status'] = 'failed'
-            job['log'] = str(exc) if not isinstance(exc, subprocess.TimeoutExpired) else (
+            job['log'] = (job.get('log', '') + '\n' if job.get('schema_deployed') else '') + (str(exc) if not isinstance(exc, subprocess.TimeoutExpired) else (
                 'Salesforce operation timed out. Check the org deployment status before retrying.'
-            )
+            ))
 
 
 def queue_release(project_id, payload, request, tasks, action):
     authorize_release(request)
+    if action == 'validate' and payload.sync_records:
+        raise HTTPException(400, 'Check-only validation never syncs records')
+    if payload.sync_records:
+        from .procedure_sync import record_plan
+        try:
+            records = record_plan(project_id)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        if records['review_digest'] != payload.record_digest:
+            raise HTTPException(409, 'Review the current procedure record preview before syncing')
     if action == 'validate' and payload.assign_to_current_user:
         raise HTTPException(400, 'Validation does not assign permissions')
     try:
@@ -208,7 +234,8 @@ def queue_release(project_id, payload, request, tasks, action):
         identifier = uuid.uuid4().hex
         job = {'job_id': identifier, 'project_id': project_id, 'org_alias': ORG_ALIAS,
                'review_digest': payload.review_digest, 'action': action, 'status': 'queued',
-               'assign_to_current_user': payload.assign_to_current_user, 'frontend_url': snapshot['frontend_url'], 'log': ''}
+               'assign_to_current_user': payload.assign_to_current_user, 'sync_records': payload.sync_records,
+               'record_digest': payload.record_digest, 'frontend_url': snapshot['frontend_url'], 'log': ''}
         JOBS[identifier] = job
         response = deepcopy(job)
     tasks.add_task(run_job, identifier, bundle)
@@ -234,3 +261,14 @@ def release_job(project_id: str, job_id: str, request: Request):
         if not job or job['project_id'] != project_id:
             raise HTTPException(404, 'Release job not found; server restarts clear browser job status')
         return deepcopy(job)
+
+
+@router.get('/api/projects/{project_id}/salesforce/records')
+def record_preview(project_id: str, request: Request):
+    if not local_request(request):
+        raise HTTPException(403, 'Record previews require the local builder')
+    from .procedure_sync import record_plan, summary
+    try:
+        return summary(record_plan(project_id))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
