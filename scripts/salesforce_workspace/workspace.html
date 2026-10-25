@@ -1,0 +1,18 @@
+<template>
+    <section class="workspace">
+        <div class="toolbar">
+            <h2>MIM Workspace</h2>
+            <a href={frontendUrl} target="_blank" rel="noopener noreferrer">Open hosted workspace</a>
+        </div>
+        <p class="notice">This workspace uses the company-hosted MIM service and its own sign-in. Open the hosted workspace to sign in if the embedded page cannot authenticate.</p>
+        <template if:true={bridgeEnabled}>
+            <p class="notice">Only send data to your approved company service. Salesforce reads use your current record and field permissions.</p>
+            <lightning-combobox label="Reviewed object" value={objectName} options={objectOptions} onchange={objectChanged} disabled={busy}></lightning-combobox>
+            <lightning-button label="Read recent records" onclick={loadRecords} disabled={busy}></lightning-button>
+            <lightning-combobox label="Selected record" value={recordId} options={recordOptions} onchange={recordChanged} disabled={busy}></lightning-combobox>
+            <lightning-button label="Send selected record for recommendation" onclick={sendRecord} disabled={sendDisabled}></lightning-button>
+            <p role="status">{message}</p>
+        </template>
+        <iframe onload={frameLoaded} src={frontendUrl} title="MIM operations workspace" allow="microphone" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" referrerpolicy="no-referrer"></iframe>
+    </section>
+</template>

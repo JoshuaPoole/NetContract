@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LifeAfterCode DevOps · Salesforce review</title>
+<link rel="stylesheet" href="/assets/discovery.css">
+</head>
+<body>
+<header><div class="brand">LifeAfterCode<span style="color:#7fe0bc"> / DevOps</span></div><span class="tag">Legacy code → reviewed evidence</span></header>
+<main><p><a id="backToDiscovery" href="/">← Back to discovered contracts &amp; Terraform</a></p>
+<section class="card" aria-labelledby="frontendHeading">
+<h2 id="frontendHeading">Hosted MIM frontend</h2>
+<p>Reuse the existing frontend and its service requests inside a MIM Workspace tab in Salesforce. Enter its full HTTPS URL, such as the existing /alexa page. Its Python runtime stays on your company-controlled host.</p>
+<label for="frontendUrl">Frontend URL</label>
+<input id="frontendUrl" type="url" placeholder="https://your-mim-service.example/alexa" style="width:min(100%,700px)" autocomplete="off">
+<div class="actions"><button id="saveFrontend" class="secondary">Save frontend URL</button><a id="previewFrontend" target="_blank" rel="noopener noreferrer" hidden>Open hosted frontend / sign in</a></div>
+<p id="frontendNotice" role="status">A blank URL keeps the Salesforce record tabs only. No login credentials belong in this URL.</p>
+</section>
+<section class="card" aria-labelledby="procedureHeading">
+<h2 id="procedureHeading">Discovered procedures · DIPs, MOPs, SOPs &amp; runbooks</h2>
+<p>One procedure concept brings together implementation, validation and rollback steps used to reconstruct remediation pipelines. Original terminology, source IDs and evidence stay attached. Discovery and schema approval do not authorize execution.</p>
+<p id="procedureSummary" role="status">Loading procedure catalogs…</p>
+<div class="scroll"><table><thead><tr><th>Source kind</th><th>Procedure ID</th><th>Title</th><th>Service</th><th>Steps</th><th>Evidence</th></tr></thead><tbody id="procedureRows"></tbody></table></div>
+<button id="exportProcedures" class="secondary" disabled>Download discovered procedure catalog</button>
+</section>
+<section class="card" aria-labelledby="reviewHeading"><div class="section-head"><h2 id="reviewHeading">Salesforce entity review</h2><span class="badge">Explicit entity + field approval</span></div><p>Business entities and procedure catalogs backed by source model fields or structured JSON fields appear here. Business symbol matches and Terraform declarations do not automatically become Salesforce objects. Approve the entity and its fields, save the review, then inspect the permissions matrix below and validate against your development org.</p><p id="reviewSummary" role="status">Approve the entity and the fields you want to deploy.</p>
+<div class="actions review-toolbar">
+<button id="saveReview" class="secondary" disabled>Save review</button>
+<button id="saveAndValidate" disabled>Save &amp; check hackfest-developer</button>
+<button id="validateSalesforce" class="secondary" disabled>Check saved review in hackfest-developer</button>
+<button id="deploySalesforce" disabled>Deploy approved to hackfest-developer</button>
+<button id="exportMetadata" class="secondary" disabled>Download Salesforce metadata</button>
+<a href="#permissionHeading">Inspect permissions matrix ↓</a>
+</div>
+<p id="reviewNotice" role="status" aria-live="polite">Loading source-backed candidates…</p>
+<p id="releaseNotice" role="status" aria-live="polite">Validation is required before deployment.</p>
+<div id="reviewEntities"></div></section>
+<section class="card" aria-labelledby="permissionHeading">
+<div class="section-head"><h2 id="permissionHeading">Salesforce permissions &amp; deployment</h2><span class="badge">Target: hackfest-developer</span></div>
+<p>These permissions come from the existing deployment generator and apply only to the approved objects and fields. Deletion, modify-all and view-all grants remain off in this set. Other permission sets may grant additional access.</p>
+<p id="permissionNotice" role="status">Save approved entity and field mappings to load the permissions matrix.</p>
+<div class="scroll"><table><thead><tr><th scope="col">Object</th><th scope="col">Read</th><th scope="col">Create</th><th scope="col">Edit</th><th scope="col">Delete</th><th scope="col">Modify all</th><th scope="col">View all</th></tr></thead><tbody id="objectPermissions"></tbody></table></div>
+<details><summary>Field permissions</summary><div class="scroll"><table><thead><tr><th scope="col">Field</th><th scope="col">Read</th><th scope="col">Edit</th></tr></thead><tbody id="fieldPermissions"></tbody></table></div></details>
+<p id="permissionIdentity"></p>
+<label><input type="checkbox" id="assignPermissionSet"> Assign this permission set to the currently authenticated Salesforce CLI user after deployment</label>
+
+<details><summary>Salesforce operation result</summary><pre id="releaseLog" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre></details>
+</section>
+</main>
+<script src="/assets/common.js"></script>
+<script src="/assets/salesforce-review.js"></script>
+<script src="/assets/salesforce-deploy.js"></script>
+</body>
+</html>
+

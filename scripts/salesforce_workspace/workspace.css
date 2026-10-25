@@ -1,0 +1,5 @@
+.workspace { background: #fff; padding: 1rem; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+h2 { font-size: 1.25rem; font-weight: 600; }
+.notice { margin: .75rem 0; color: #444; }
+iframe { display: block; width: 100%; height: calc(100vh - 240px); min-height: 650px; border: 1px solid #ddd; border-radius: .5rem; }

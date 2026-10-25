@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LifeAfterCode DevOps · Legacy discovery</title>
+<link rel="stylesheet" href="/assets/discovery.css">
+</head>
+<body>
+<header><div class="brand">LifeAfterCode<span style="color:#7fe0bc"> / DevOps</span></div><span class="tag">Legacy code → reviewed evidence</span></header>
+<main>
+<p class="eyebrow" style="margin-top:38px">Discover what the application contains</p>
+<h1>Evidence-backed<br>repository preview.</h1>
+<p class="intro">Inspect the kind, candidate, source evidence and fields discovered in legacy code. Use that same evidence for business-contract classification and reviewed Salesforce mappings.</p>
+<section class="card" aria-labelledby="scanHeading"><h2 id="scanHeading">01 / Scan legacy code</h2><p>Choose a repository ZIP. One scan builds the repository preview and inventories; source code is read without execution.</p><form id="scanForm" class="upload"><label for="file">Repository ZIP</label><input id="file" type="file" accept=".zip" required><button id="scanButton" type="submit">Discover contracts &amp; inventory</button></form><p id="notice" role="status" aria-live="polite">Ready to inspect a repository. No credentials required.</p></section>
+<section id="results" hidden>
+<div class="stats" aria-label="Discovery summary"><div class="stat"><strong id="businessCount">0</strong><span>Business contract candidates</span></div><div class="stat"><strong id="resourceCount">0</strong><span>Declared Terraform resources</span></div><div class="stat"><strong id="fileCount">0</strong><span>Terraform source files</span></div></div>
+<section class="card" aria-labelledby="irHeading">
+<div class="section-head"><h2 id="irHeading">02 / Evidence-backed repository preview</h2><span class="badge">Static source evidence · review required</span></div>
+<p id="irSummary" role="status"></p>
+<p>Inspect model candidates, API endpoints, persistence candidates and container definitions from the existing repository scanner. These observations feed the Salesforce classification and review workflow; they do not establish runtime lineage or approve deployment.</p>
+<div class="scroll"><table><thead><tr><th scope="col">Kind</th><th scope="col">Candidate</th><th scope="col">Evidence</th><th scope="col">Fields</th></tr></thead><tbody id="irNodes"></tbody></table></div>
+<p id="irEmpty" class="empty" hidden>No supported repository candidates found. Inspect discovery coverage and the source files before drawing conclusions.</p>
+<details><summary>Source coverage &amp; review notes</summary><ul id="irWarnings"></ul></details>
+<div class="actions"><button id="downloadIR" class="secondary" disabled>Download repository IR</button></div>
+</section>
+<section class="card" aria-labelledby="businessHeading"><div class="section-head"><h2 id="businessHeading">03 / Business contracts</h2><span class="badge">Candidates · human review required</span></div><p>Application behavior: incidents, DIPs, workflows, execution policies and approval rules. Symbol matches provide leads to inspect, rather than verified runtime behavior or legal agreements.</p><div class="scroll"><table><thead><tr><th scope="col">Contract / symbol</th><th scope="col">Business role</th><th scope="col">Source evidence</th><th scope="col">State</th></tr></thead><tbody id="businessRows"></tbody></table></div><p id="businessEmpty" class="empty" hidden>No supported business symbols found. Python declarations and JSON keys are supported; this does not establish that the repository has no business contracts.</p><details><summary>Discovery coverage</summary><ul id="businessWarnings"></ul></details></section>
+<section class="card" aria-labelledby="terraformHeading"><div class="section-head"><h2 id="terraformHeading">04 / Discovered Terraform inventory</h2><span class="badge">Declared in source · runtime unverified</span></div><p>Resources, data sources, modules, providers, variables and outputs extracted from existing Terraform files. These are discovered declarations, not newly generated infrastructure.</p><div class="scroll"><table><thead><tr><th scope="col">Address</th><th scope="col">Declaration</th><th scope="col">Resource type</th><th scope="col">Module directory</th><th scope="col">Source evidence</th></tr></thead><tbody id="terraformRows"></tbody></table></div><p id="terraformEmpty" class="empty" hidden>No supported Terraform declarations found. No infrastructure has been inferred from application code.</p><details><summary>Files inspected &amp; coverage</summary><ul id="terraformFiles"></ul><ul id="terraformWarnings"></ul></details></section>
+<section class="card"><h2>05 / Seeded network data</h2><p id="seedSummary"></p><div class="scroll"><table><thead><tr><th>Kind</th><th>Records</th><th>Review state</th></tr></thead><tbody id="seedRows"></tbody></table></div><ul id="seedWarnings"></ul><p>Use the reviewed seed import workflow to compare existing Salesforce fields and propose missing metadata. This scan makes no Salesforce changes.</p></section>
+<div class="actions"><button id="exportInventory" class="secondary" disabled>Download discovery evidence</button><a id="salesforceLink" href="/salesforce" hidden>Review Salesforce mappings →</a></div>
+</section>
+</main>
+<script src="/assets/common.js"></script>
+<script src="/assets/discovery.js"></script>
+</body>
+</html>

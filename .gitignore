@@ -1,0 +1,26 @@
+__pycache__/
+.pytest_cache/
+.env
+*.db
+workspace/
+*.zip
+*.pyc
+
+# Local environments and credentials
+.venv/
+venv/
+.env.*
+!.env.example
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+*.tfplan
+*.pem
+*.key
+.contractcyber/
+
+
+dist/
+.ruff_cache/

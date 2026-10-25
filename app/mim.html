@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MIM incident review</title><link rel="stylesheet" href="/assets/discovery.css"></head><body><main>
+<h1>MIM incident review</h1><p>Read live incident records from hackfest-developer and compare them with your approved DIP catalog. Recommendations require human review.</p>
+<p>Use the controls below with your local Salesforce CLI login, or send a selected record from the Salesforce MIM Workspace toolbar when hosted by your company.</p>
+<button id="refresh">Read Salesforce incidents</button><p id="status" role="status"></p><label>Incident <select id="incidents"><option value="">Load incidents first</option></select></label> <button id="recommend" disabled>Review recommendation</button>
+<h2>Recommendation and evidence</h2><p id="decisionSummary" role="status"></p><pre id="result" style="white-space:pre-wrap"></pre><a href="/salesforce">Schema and deployment review</a>
+</main><script src="/assets/mim-incidents.js"></script></body></html>
