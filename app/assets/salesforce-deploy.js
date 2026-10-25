@@ -8,7 +8,7 @@ let frontendVersion = 0;
 
 function updateReleaseButtons() {
  const ready = permissionSnapshot?.deployment_enabled && reviewSaved && !frontendDirty && !frontendSaving && !reviewSaving && !releaseBusy;
- $('validateSalesforce').disabled = !ready;
+ $('validateSalesforce').disabled = reviewSaving || releaseBusy || frontendDirty || frontendSaving || !approvedFields();
  $('deploySalesforce').disabled = !ready || !releaseValidated;
  $('assignPermissionSet').disabled = releaseBusy;
  $('saveAndValidate').disabled = reviewSaving || releaseBusy || frontendDirty || frontendSaving || !approvedFields();
@@ -62,7 +62,15 @@ function freezeReview(busy) {
  updateReleaseButtons();
 }
 async function startSalesforceRelease(action) {
- if (releaseBusy || !permissionSnapshot?.deployment_enabled || (action === 'deploy' && !releaseValidated)) return;
+ if (releaseBusy) return;
+ if (!permissionSnapshot?.deployment_enabled) {
+  $('releaseNotice').textContent = permissionSnapshot?.message || 'Permissions could not be loaded. Save and check again; inspect the permissions message below.';
+  return;
+ }
+ if (action === 'deploy' && !releaseValidated) {
+  $('releaseNotice').textContent = 'Validate the current saved approvals before deploying.';
+  return;
+ }
  const requestedProject = projectId, requestRevision = revision;
  const snapshot = permissionSnapshot;
  const assignment = action === 'deploy' && $('assignPermissionSet').checked;
@@ -143,7 +151,7 @@ $('frontendUrl').addEventListener('input', () => {
  $('releaseNotice').textContent = 'Save the frontend URL first, then validate again.';
 });
 $('saveFrontend').addEventListener('click', saveFrontendSettings);
-$('validateSalesforce').addEventListener('click', () => startSalesforceRelease('validate'));
+$('validateSalesforce').addEventListener('click', validateCurrentReview);
 $('deploySalesforce').addEventListener('click', () => startSalesforceRelease('deploy'));
 
 // Start only after the review AND deployment helpers are initialized.

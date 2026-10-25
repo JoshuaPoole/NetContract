@@ -81,10 +81,21 @@ async function saveCanonicalReview() {
  }
 }
 $('saveReview').addEventListener('click', saveCanonicalReview);
-$('saveAndValidate').addEventListener('click', async () => {
- if (!approvedFields()) { updateReviewSummary(); return; }
- if (await saveCanonicalReview()) await startSalesforceRelease('validate');
-});
+async function validateCurrentReview() {
+ if (releaseBusy || reviewSaving) return;
+ if (!approvedFields()) {
+  updateReviewSummary();
+  $('releaseNotice').textContent = 'Approve the parent entity and at least one field before checking Salesforce.';
+  return;
+ }
+ if (!await saveCanonicalReview()) return;
+ if (!permissionSnapshot) {
+  $('releaseNotice').textContent = 'The review was saved, but permissions could not be loaded. Check the permissions message below and retry.';
+  return;
+ }
+ await startSalesforceRelease('validate');
+}
+$('saveAndValidate').addEventListener('click', validateCurrentReview);
 $('exportMetadata').addEventListener('click',async()=>{
  if(!projectId||$('exportMetadata').disabled)return;const requestedProject=projectId,requestRevision=revision;
  try {const response=await fetch('/api/projects/'+encodeURIComponent(projectId)+'/canonical/metadata.zip');if(!response.ok){await readResponse(response);return;}const blob=await response.blob();if(requestedProject!==projectId||requestRevision!==revision)return;download(blob,'lifeaftercode-salesforce-metadata.zip');$('reviewNotice').textContent='Reviewed Salesforce metadata downloaded. Inspect and deploy through the manual Salesforce workflow.';}

@@ -133,6 +133,26 @@ const change=(element,value,event='change')=>{element.value=value;element.listen
  assert.equal(releaseCalls.at(-1).assign_to_current_user,true);
  assert.equal(actionable.elements.deploySalesforce.disabled,true,'deployment consumes validation in the UI');
  assert.match(actionable.elements.releaseNotice.textContent,/Deployment succeeded/);
+ // A saved review must validate again without touching any approval dropdown.
+ await actionable.trigger('validateSalesforce','click');
+ assert.equal(releaseCalls.at(-1).action,'validate');
+ assert.equal(actionable.elements.deploySalesforce.disabled,false);
+ // Editing the review should be saved by either validation button automatically.
+ actionable.run("reviewPlan.entities[0].fields[0].target='FreshTarget__c';changed();");
+ assert.equal(actionable.elements.validateSalesforce.disabled,false);
+ await actionable.trigger('validateSalesforce','click');
+ assert.equal(savedPlan.entities[0].fields[0].target,'FreshTarget__c');
+ assert.equal(actionable.elements.deploySalesforce.disabled,false);
+ // Missing CLI capability must explain itself and remain retryable after setup.
+ permissionsEnabled=false;
+ const beforeUnavailable=releaseCalls.length;
+ await actionable.trigger('validateSalesforce','click');
+ assert.equal(releaseCalls.length,beforeUnavailable);
+ assert.match(actionable.elements.releaseNotice.textContent,/CLI unavailable/);
+ permissionsEnabled=true;
+ await actionable.trigger('validateSalesforce','click');
+ assert.equal(releaseCalls.length,beforeUnavailable+1);
+
  actionable.run(`renderProcedures([{records:[{procedure_type:'MOP',procedure_id:'LAB-BFD',title:'<unsafe title>',service:'SYNTHETIC-NETWORK',source_file:'data/mops.json',reference:'/0',record:{implementation_steps:['Inspect state'],validation_steps:['Reobserve']}}]}])`);
  assert.match(actionable.elements.procedureSummary.textContent,/1 discovered procedures/);
  assert.equal(actionable.elements.procedureRows.children[0].children[2].textContent,'<unsafe title>','catalog titles must be plain text');
