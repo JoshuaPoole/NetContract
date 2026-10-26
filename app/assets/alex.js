@@ -5,12 +5,14 @@ const browser = typeof window === 'undefined' ? {} : window;
 const Recognition = browser.SpeechRecognition || browser.webkitSpeechRecognition;
 let busy=false,connected=false,listening=false,recognition=null;
 const history=[],events=[];
-let latestEvidence=null;
+let latestEvidence=null,nodeSession=null,confirmation=null;
 function controls() {
  get('askAlex').disabled=!connected || busy || listening;
  get('voiceInput').disabled=!connected || busy || listening || !Recognition;
  get('stopListening').disabled=!listening;
  get('incidentSelect').disabled=busy || listening;
+ get('reviewNode').disabled=busy || listening || nodeSession?.phase!=='awaiting_review';
+ get('confirmNode').disabled=busy || listening || !confirmation || nodeSession?.phase!=='awaiting_confirmation';
 }
 function logEvent(text) {
  events.push({at:new Date().toISOString(),message:text});
@@ -67,6 +69,13 @@ function renderRecord(record) {
 }
 async function ask(question) {
  if (!project || !connected || busy || !question.trim()) return;
+ if (/^(?:show\s+)?(?:evidence|logs|diagnostics|status)[.!?]?$/i.test(question.trim()) && latestEvidence) {
+  get('sourceDetails').open=true;get('diagnosticLogs').scrollIntoView?.({behavior:'smooth',block:'center'});bubble('The pinned source evidence and available diagnostic logs are on screen.');speak('The source evidence and logs are on screen.');return;
+ }
+ if (/^(approve|approved|approve simulation)$/i.test(question.trim())) {await reviewNode(false);return;}
+ if (/^(confirm approval|confirm simulated intervention)$/i.test(question.trim())) {await reviewNode(true);return;}
+ if (/\bnodes?(?:[\s-]|$)/i.test(question) && get('incidentSelect').value) {get('incidentSelect').value='';logEvent('Explicit node request selected; imported incident context cleared.');}
+ nodeSession=null;confirmation=null;get('diagnosticLogs').textContent='';get('nodeContext').textContent='Collecting requested context…';
  busy=true;controls();bubble(question,true);logEvent('Request submitted to Salesforce procedure lookup.');
  get('alexRecords').replaceChildren();get('alexEvidence').textContent='';get('alexStatus').textContent='Reading Salesforce…';latestEvidence=null;
  try {
@@ -77,8 +86,9 @@ async function ask(question) {
   bubble(reply);speak(reply);
   for(const record of data.records)renderRecord(record);
   get('alexEvidence').textContent=JSON.stringify(data,null,2);
+  if (data.session) renderSession(data.session);
   logEvent('Lookup completed: '+data.status+' · '+data.records.length+' displayed records · publication '+(data.publication_digest || 'unknown')+'.');
-  get('diagnosticStatus').textContent='No synthetic login or device commands were run. Inspect the Salesforce source evidence and procedure steps above; these are not live diagnostic logs.';
+  if (!data.session) get('diagnosticStatus').textContent='No synthetic login or device commands were run. Inspect the Salesforce source evidence and procedure steps above; these are not live diagnostic logs.';
  } catch(error) {get('alexStatus').textContent=error.message;bubble(error.message);logEvent('Lookup failed: '+error.message);}
  finally {busy=false;controls();}
 }
@@ -99,8 +109,33 @@ get('voiceInput').addEventListener('click',()=>{
  try {recognition.start();}catch(error){listening=false;controls();get('voiceStatus').textContent=error.message;}
 });
 get('stopListening').addEventListener('click',()=>recognition?.stop());
+function renderSession(session) {
+ nodeSession=session;
+ const before=session.prechecks,after=session.postchecks;
+ get('nodeContext').textContent=session.node+' · '+session.environment.toUpperCase()+' · '+session.phase.replaceAll('_',' ')+' · environment source: '+session.environment_basis+' · evidence '+session.evidence_digest;
+ get('diagnosticStatus').textContent='SIMULATION ONLY · controller localhost · fixture target '+before.target_ip+' · demo credentials are placeholders and are never used. No SSH, real Ansible or network connection.';
+ get('diagnosticLogs').textContent='PRECHECKS\n'+before.ansible_style_log+(session.task_plan?.length?'\n\nPROPOSED TASKS (preview only)\n'+session.task_plan.map(task=>task.step_number+'. '+JSON.stringify(task.source_step)+'\n'+(task.supported?task.module+' '+JSON.stringify(task.argv_preview):'MANUAL REVIEW REQUIRED')).join('\n'):'')+(session.task_log?'\n\nSIMULATED TASK RESULTS\n'+session.task_log:'')+(after?'\n\nPOSTCHECKS\n'+after.ansible_style_log:'')+'\n\n'+(session.blockers.join('\n') || session.environment_note);
+ get('alexEvidence').textContent=JSON.stringify({...latestEvidence,session},null,2);
+ logEvent('Node session '+session.node+' / '+session.environment+': '+session.phase+'.');
+ controls();
+}
+async function reviewNode(confirm) {
+ if (busy || !nodeSession || (confirm && !confirmation)) return;
+ busy=true;controls();
+ try {
+  const data=await post('/api/projects/'+encodeURIComponent(project)+'/alexa/review',{
+   session_id:nodeSession.session_id,expected_version:nodeSession.version,evidence_digest:nodeSession.evidence_digest,
+   confirmation_id:confirm?confirmation:null,
+  });
+  confirmation=data.confirmation_id || null;
+  renderSession(data.session);bubble(data.reply);speak(data.reply);get('alexStatus').textContent=data.reply;
+ } catch(error) {confirmation=null;get('alexStatus').textContent=error.message;bubble(error.message);logEvent('Simulated review blocked: '+error.message);}
+ finally {busy=false;controls();}
+}
+get('reviewNode').addEventListener('click',()=>reviewNode(false));
+get('confirmNode').addEventListener('click',()=>reviewNode(true));
 get('downloadSession').addEventListener('click',()=>{
- const blob=new Blob([JSON.stringify({project,history,events,evidence:latestEvidence,execution_enabled:false},null,2)],{type:'application/json'});
+ const blob=new Blob([JSON.stringify({project,history,events,evidence:latestEvidence,node_session:nodeSession,execution_enabled:false},null,2)],{type:'application/json'});
  const url=browser.URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='alexa-session-evidence.json';link.click();browser.URL.revokeObjectURL(url);
 });
 const workspaceReady=connectPublished();

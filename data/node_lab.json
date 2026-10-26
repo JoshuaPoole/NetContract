@@ -1,0 +1,79 @@
+{
+  "profile": "netcontract-bfd-lab-v1",
+  "simulation_only": true,
+  "controller": "localhost",
+  "credential_profile": "demo-placeholder-not-used",
+  "nodes": {
+    "NODE-00001": {
+      "environment": "uat",
+      "management_ip": "192.0.2.1",
+      "peer_ip": "192.0.2.2",
+      "bfd_state": "down",
+      "procedure_id": "LAB-MOP-BFD"
+    },
+    "NODE-00002": {
+      "environment": "uat",
+      "management_ip": "192.0.2.2",
+      "peer_ip": "192.0.2.3",
+      "bfd_state": "up",
+      "procedure_id": "LAB-MOP-BFD"
+    },
+    "NODE-00003": {
+      "environment": "uat",
+      "management_ip": "192.0.2.3",
+      "peer_ip": "192.0.2.4",
+      "bfd_state": "down",
+      "procedure_id": "LAB-MOP-BFD"
+    },
+    "NODE-00004": {
+      "environment": "uat",
+      "management_ip": "192.0.2.4",
+      "peer_ip": "192.0.2.5",
+      "bfd_state": "up",
+      "procedure_id": "LAB-MOP-BFD",
+      "cyber": {
+        "kind": "application",
+        "procedure_id": "DIP-CYBER-001",
+        "signal": "cyber.application_exploitation"
+      }
+    },
+    "NODE-00005": {
+      "environment": "uat",
+      "management_ip": "192.0.2.5",
+      "peer_ip": "192.0.2.6",
+      "bfd_state": "up",
+      "procedure_id": "LAB-MOP-BFD",
+      "cyber": {
+        "kind": "endpoint",
+        "procedure_id": "DIP-CYBER-002",
+        "signal": "cyber.endpoint_compromise"
+      }
+    },
+    "NODE-00006": {
+      "environment": "uat",
+      "management_ip": "192.0.2.6",
+      "peer_ip": "192.0.2.7",
+      "bfd_state": "up",
+      "procedure_id": "LAB-MOP-BFD",
+      "cyber": {
+        "kind": "exfiltration",
+        "procedure_id": "DIP-CYBER-003",
+        "signal": "cyber.exfiltration_alert"
+      }
+    },
+    "NODE-00007": {
+      "environment": "uat",
+      "management_ip": "192.0.2.7",
+      "peer_ip": "192.0.2.8",
+      "bfd_state": "up",
+      "procedure_id": "LAB-MOP-BFD"
+    },
+    "NODE-00008": {
+      "environment": "uat",
+      "management_ip": "192.0.2.8",
+      "peer_ip": "192.0.2.9",
+      "bfd_state": "up",
+      "procedure_id": "LAB-MOP-BFD"
+    }
+  }
+}

@@ -16,3 +16,6 @@ pre { white-space:pre-wrap;overflow-wrap:anywhere;max-height:440px;overflow:auto
 #alexRecords h2 { font-size:20px; }
 #voiceStatus,#diagnosticStatus { font-size:14px; }
 @media(max-width:850px) { .workspace-grid { grid-template-columns:1fr; } }
+
+#diagnosticLogs { background:#101923;padding:16px;border-radius:8px; }
+#nodeContext { overflow-wrap:anywhere; }

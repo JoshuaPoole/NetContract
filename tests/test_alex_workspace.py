@@ -22,7 +22,7 @@ def test_alex_reads_same_approved_object_and_never_invents_bfd_for_cyber(setup,m
         return [{'Id':'SF-BFD','Dip_Id__c':'LAB-BFD','Title__c':'BFD failure'},
                 {'Id':'SF-CYBER','Dip_Id__c':'DIP-CYBER','Title__c':'Cyber containment changed in Salesforce','Secret__c':'hidden'}]
     monkeypatch.setattr(alex,'query_salesforce',query)
-    r=client.post('/api/projects/demo/alex/ask',headers=headers,json={'question':'Investigate Cyber incident'})
+    r=client.post('/api/projects/demo/alex/ask',headers=headers,json={'question':'Investigate Cyber containment incident'})
     assert r.status_code==200
     data=r.json()
     assert data['source']=='salesforce'
@@ -39,7 +39,9 @@ def test_no_record_or_node_data_has_no_simulation_fallback(setup,monkeypatch):
     result=client.post('/api/projects/demo/alex/ask',headers=headers,json={'question':'BFD'}).json()
     assert result['status']=='no_match' and not result['records']
     node=client.post('/api/projects/demo/alex/ask',headers=headers,json={'question':'BFD on NODE-00001'}).json()
-    assert node['status']=='clarification_required'
+    assert node['status']=='investigation'
+    assert node['session']['phase']=='review_blocked'
+    assert node['simulation_only']
     assert not node['records']
     assert client.post('/api/projects/demo/alex/ask',json={'question':'BFD'}).status_code==403
 
@@ -48,3 +50,12 @@ def test_routes_share_the_builder_runtime(setup):
     client,_=setup
     assert client.get('/alex').status_code==200
     assert client.get('/alexa').text==client.get('/alex').text
+
+
+def test_generic_cyber_requires_symptoms_and_specific_title_beats_shared_prose(setup,monkeypatch):
+    client,headers=setup
+    monkeypatch.setattr(alex,'query_salesforce',lambda _:[{'Id':'SF-BFD','Dip_Id__c':'LAB-BFD','Title__c':'BFD cyber shared description'}, {'Id':'SF-CYBER','Dip_Id__c':'DIP-CYBER','Title__c':'Application exploitation containment'}])
+    generic=client.post('/api/projects/demo/alex/ask',headers=headers,json={'question':'Investigate Cyber incident'}).json()
+    assert generic['status']=='clarification_required'
+    result=client.post('/api/projects/demo/alex/ask',headers=headers,json={'question':'Application exploitation incident'}).json()
+    assert [row['record_id'] for row in result['records']]==['SF-CYBER']

@@ -2,16 +2,18 @@
 <header class="workspace-title"><h1>Alexa · Engineer workspace</h1><span class="badge">Published Salesforce data · review only</span></header>
 <p id="connection" role="status">Connecting to published workspace…</p>
 <div class="workspace-grid"><section class="card conversation"><h2>Voice &amp; conversation</h2>
-<label for="incidentSelect">Salesforce incident (optional)</label><select id="incidentSelect"><option value="">Search by procedure topic instead</option></select><p id="incidentNotice" role="status"></p>
+<details><summary>Optional imported incident context</summary><label for="incidentSelect">Salesforce incident</label><select id="incidentSelect"><option value="">No imported incident selected</option></select><p id="incidentNotice" role="status"></p></details>
 <div class="voice-controls"><label><input id="speakReplies" type="checkbox"> Read replies aloud</label><button id="voiceInput" type="button" disabled>Speak request</button><button id="stopListening" type="button" disabled>Stop listening</button><button id="stopSpeech" type="button">Stop read-out</button></div>
 <p id="voiceStatus" role="status">Voice is optional and uses your browser's speech services. Typed requests always remain available.</p>
 <div id="conversation" class="transcript" role="log" aria-label="Conversation history" aria-live="polite"></div>
-<form id="alexForm"><label for="question">Request or procedure topic</label><input id="question" maxlength="500" placeholder="Find BFD procedures" required><button id="askAlex">Send request</button></form>
-<p id="alexStatus" role="status"></p>
+<form id="alexForm"><label for="question">Symptoms and target node</label><input id="question" maxlength="500" placeholder="List BFD alarms on node 3 in UAT" required><button id="askAlex">Send request</button></form>
+<p id="alexStatus" role="status"></p><p id="nodeContext" role="status">No node investigation yet.</p>
+<button id="reviewNode" type="button" disabled>Review simulated intervention</button><button id="confirmNode" type="button" disabled>Confirm simulated intervention</button><p>Approval here acknowledges only an in-memory lab test. It is not Salesforce authorization or real remediation.</p>
 </section><section class="card evidence"><div class="section-head"><h2>Procedure evidence</h2><button id="showEvidence" type="button" class="secondary">Show source details</button></div><div id="alexRecords"><p>Results will appear here after a Salesforce query.</p></div>
 <details id="sourceDetails"><summary>Salesforce records &amp; publication evidence</summary><pre id="alexEvidence"></pre></details>
 </section></div>
 <section class="card"><div class="section-head"><h2>Session events &amp; diagnostic logs</h2><button id="downloadSession" type="button" class="secondary">Download session evidence</button></div>
 <p id="diagnosticStatus">No synthetic login or device command evidence is attached to this session. The events below describe actual workspace activity; procedure steps are not executed command output.</p>
+<pre id="diagnosticLogs" aria-label="Ansible-style synthetic command logs"></pre>
 <pre id="sessionEvents" role="log" aria-label="Session events"></pre></section>
 </main><script src="/assets/alex.js"></script></body></html>

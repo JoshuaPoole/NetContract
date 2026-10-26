@@ -58,3 +58,6 @@ Procedure field review now includes an explicit unique external-ID flag. The bro
 ## Published builder-to-Alexa boundary
 
 Successful record sync now persists a frozen Salesforce mapping and source-ID scope. `/alexa` resolves this publication without exposing builder controls or consuming later draft approvals. Older imports can be explicitly activated after live read-back checks. Published Incident mappings enable customer incident selection and current-record symptom lookup against the published procedure catalog. Original voice/MCP diagnostics and hosted AWS authentication remain separate work.
+
+
+The `/alexa` workspace now includes explicit BFD and cyber lab investigations over published Salesforce procedures. `node_investigation.py` pins evidence and two-step simulation confirmation; `command_fixtures.py` reuses the original pure BFD fixture/parser, while `cyber_lab.py` produces bounded command previews and synthetic results only. The new eight-node inventory is demo configuration, not discovered infrastructure. See ALEX_WORKSPACE.md for scenario requests and runtime limitations.

@@ -1,0 +1,33 @@
+{
+  "profile": "contractcyber-command-fixtures-v1",
+  "parser_revision": 1,
+  "commands": {
+    "bfd_sessions": {
+      "command": "show router bfd session",
+      "platform": "nokia_sros_classic_fixture",
+      "context": "selected_node",
+      "outputs": {
+        "up": "BFD Session\nInterface             State       Tx Intvl  Rx Intvl  Multipl\n  Remote Address      Protocol\nlab-peer              Up (3)      300       300       3\n  {peer_ip}           bgp\nNo. of BFD sessions: 1\n",
+        "down": "BFD Session\nInterface             State       Tx Intvl  Rx Intvl  Multipl\n  Remote Address      Protocol\nlab-peer              Down (1)    300       300       3\n  {peer_ip}           bgp\nNo. of BFD sessions: 1\n"
+      }
+    },
+    "card_inventory": {
+      "command": "show card",
+      "platform": "nokia_sros_classic_fixture",
+      "context": "selected_node",
+      "outputs": {
+        "present": "Card Summary\nSlot  Provisioned Card-type   Equipped Card-type      Admin State   Operational State\n1     iom-lab                 iom-lab                 up            up\n",
+        "missing": "Card Summary\nSlot  Provisioned Card-type   Equipped Card-type      Admin State   Operational State\n1     iom-lab                                         up            provisioned\n"
+      }
+    },
+    "linux_addresses": {
+      "command": "ip addr show",
+      "platform": "linux_iproute2_fixture",
+      "context": "linux_diagnostic_fixture_for_selected_node",
+      "outputs": {
+        "addresses": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 state UNKNOWN\n    inet 127.0.0.1/8 scope host lo\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 state UP\n    inet {management_ip}/16 scope global eth0\n"
+      }
+    }
+  }
+}
+
