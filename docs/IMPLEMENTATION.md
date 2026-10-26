@@ -54,3 +54,7 @@ Procedure field review now includes an explicit unique external-ID flag. The bro
 ## Same-server Alex procedure retrieval
 
 `alex_workspace.py` and `/alex` use the builder project identity to select its approved Salesforce object, fields and source IDs. Typed topic lookup reads Salesforce and presents source record evidence without a simulation fallback. This is retrieval, not the original node-investigation agent or execution. Both builder and Alex run in one process; the hosted Salesforce authentication boundary remains pending. See ALEX_WORKSPACE.md.
+
+## Published builder-to-Alexa boundary
+
+Successful record sync now persists a frozen Salesforce mapping and source-ID scope. `/alexa` resolves this publication without exposing builder controls or consuming later draft approvals. Older imports can be explicitly activated after live read-back checks. Published Incident mappings enable customer incident selection and current-record symptom lookup against the published procedure catalog. Original voice/MCP diagnostics and hosted AWS authentication remain separate work.

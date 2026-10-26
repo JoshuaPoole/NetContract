@@ -23,6 +23,7 @@ function updateReleaseButtons() {
  $('deploySalesforce').disabled = !ready || !releaseValidated;
  $('assignPermissionSet').disabled = releaseBusy;
  const syncReason = recordSyncPrerequisite();
+ $('activatePublishedRecords').disabled = releaseBusy || reviewSaving || !recordSnapshot || !reviewSaved;
  $('syncProcedureRecords').disabled = releaseBusy || !!syncReason || !recordSnapshot || !reviewSaved;
  $('syncProcedureRecords').setAttribute('title', releaseBusy ? 'Wait for the current Salesforce operation.' : syncReason || 'Ready to sync the previewed records after deployment.');
  if (releaseBusy) $('recordSyncNotice').textContent = 'Wait for the current Salesforce operation to finish.';
@@ -191,3 +192,18 @@ $('deploySalesforce').addEventListener('click', () => startSalesforceRelease('de
 
 // Start only after the review AND deployment helpers are initialized.
 const reviewReady = loadReview();
+
+$('activatePublishedRecords').addEventListener('click', async ()=>{
+ if (releaseBusy || !recordSnapshot || !permissionSnapshot || !reviewSaved) return;
+ const project=projectId, currentRevision=revision;
+ freezeReview(true);
+ $('publicationNotice').textContent='Verifying previously synced Salesforce records…';
+ try {
+  await readResponse(await fetch('/api/projects/'+encodeURIComponent(project)+'/salesforce/publish',{
+   method:'POST',headers:{'Content-Type':'application/json','X-LifeAfterCode-Release':'1'},
+   body:JSON.stringify({review_digest:permissionSnapshot.review_digest,record_digest:recordSnapshot.record_digest}),
+  }));
+  if(project===projectId && currentRevision===revision) $('publicationNotice').textContent='Published. Open Alexa to query these Salesforce records. Later draft changes stay in the builder until republished.';
+ } catch(error) {if(project===projectId) $('publicationNotice').textContent=error.message;}
+ finally {freezeReview(false);}
+});

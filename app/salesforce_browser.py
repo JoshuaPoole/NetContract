@@ -170,7 +170,7 @@ def run_job(identifier, bundle):
         job['status'] = 'running'
     try:
         # A review edited while this job was queued cannot authorize the old job.
-        _, current = permission_snapshot(job['project_id'])
+        deployment_review, current = permission_snapshot(job['project_id'])
         if current['review_digest'] != job['review_digest']:
             raise RuntimeError('Review changed; save and validate the current mappings')
         arguments = (bundle, job['action'] == 'deploy', job['assign_to_current_user'])
@@ -189,7 +189,10 @@ def run_job(identifier, bundle):
             job['schema_deployed'] = True
             job['log'] = output + '\nSchema deployed. Starting reviewed record sync.'
             receipts = apply(records, records['review_digest'], shutil.which('sf.cmd') or shutil.which('sf'))
+            from .published_workspace import publish
+            publication = publish(job['project_id'], records, review=deployment_review)
             output += '\nProcedure record sync confirmed: ' + json.dumps(receipts)
+            output += '\nPublished Alexa workspace: /alexa?project=' + job['project_id'] + ' (' + publication['publication_digest'] + ')'
         with STATE_LOCK:
             job['status'] = 'deployed' if job['action'] == 'deploy' else 'validated'
             job['log'] = output
@@ -272,3 +275,33 @@ def record_preview(project_id: str, request: Request):
         return summary(record_plan(project_id))
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@router.post('/api/projects/{project_id}/salesforce/publish')
+def activate_existing_records(project_id: str, payload: ReleaseRequest, request: Request):
+    """Adopt an older successful sync only after read-back verification."""
+    authorize_release(request)
+    from .procedure_sync import record_plan
+    from .published_workspace import publish
+    from .mim_incidents import query_salesforce
+    with STATE_LOCK:
+        if any(job['status'] in {'queued', 'running'} for job in JOBS.values()):
+            raise HTTPException(409, 'Wait for the current Salesforce operation before publishing')
+        try:
+            records = record_plan(project_id)
+            reviewed, snapshot = permission_snapshot(project_id)
+            if payload.review_digest != snapshot['review_digest'] or payload.record_digest != records['review_digest']:
+                raise HTTPException(409, 'Saved review or record preview changed; refresh and review again')
+            key = records['batches'][0]['external_id']
+            columns = sorted({name for batch in records['batches'] for row in batch['rows'] for name in row})
+            rows = query_salesforce(f"SELECT Id, {', '.join(columns)} FROM {records['batches'][0]['object']} LIMIT 1001")
+            expected = {row[key] for batch in records['batches'] for row in batch['rows']}
+            if len(rows) > 1000 or not expected.issubset({row.get(key) for row in rows}):
+                raise HTTPException(409, 'Not all reviewed procedure IDs exist in Salesforce. Deploy and sync before publishing.')
+            _, current = permission_snapshot(project_id)
+            if current['review_digest'] != payload.review_digest or record_plan(project_id)['review_digest'] != payload.record_digest:
+                raise HTTPException(409, 'Review changed during verification; publication cancelled')
+            value = publish(project_id, records, review=reviewed)
+            return {'published': True, 'project_id': project_id, 'publication_digest': value['publication_digest']}
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc

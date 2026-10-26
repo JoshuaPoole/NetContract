@@ -3,21 +3,13 @@ import pytest
 
 from app.main import app
 from app import alex_workspace as alex
-from app.reviewed_metadata import ReviewedCanonicalPlan
 
 
 @pytest.fixture
 def setup(monkeypatch):
     monkeypatch.setenv('LIFEAFTERCODE_BROWSER_DEPLOY', '1')
     monkeypatch.setattr('shutil.which', lambda *a: 'sf')
-    plan={'batches':[{'object':'Rtest_DIP__c','external_id':'Dip_Id__c','rows':[{'Dip_Id__c':'LAB-BFD'},{'Dip_Id__c':'DIP-CYBER'}]}]}
-    review=ReviewedCanonicalPlan(repository='test',repository_id='hash',entities=[{
-        'concept':'DIP','status':'approved','source_representations':['MOP'],'evidence':['data/mops.json#'],
-        'fields':[{'source':'MOP.dip_id','target':'Dip_Id__c','status':'approved','evidence':'data/mops.json#/0/dip_id'},
-                  {'source':'MOP.title','target':'Title__c','status':'approved','evidence':'data/mops.json#/0/title'},
-                  {'source':'MOP.implementation_steps','target':'Implementation_Steps__c','status':'review','evidence':'data/mops.json#/0/implementation_steps'}]}])
-    monkeypatch.setattr(alex,'record_plan',lambda _:plan)
-    monkeypatch.setattr(alex,'load_saved_review',lambda _:review)
+    monkeypatch.setattr(alex,'published',lambda *a:{'project_id':'demo','object':'Rtest_DIP__c','identity':'Dip_Id__c','fields':{'Dip_Id__c':'dip_id','Title__c':'title'},'allowed_ids':['LAB-BFD','DIP-CYBER'],'publication_digest':'published','published_at':'now','org_alias':'hackfest-developer','incident':None})
     client=TestClient(app,base_url='http://localhost',client=('127.0.0.1',50000))
     return client,{'Origin':'http://localhost','X-LifeAfterCode-Release':'1'}
 

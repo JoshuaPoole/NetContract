@@ -123,7 +123,7 @@ async function loadReview() {
   $('reviewNotice').textContent = 'Scan a repository on the discovery page first, then follow its Salesforce mappings link.';
   return;
  }
- $('alexWorkspaceLink').href = '/alex?project=' + encodeURIComponent(projectId);
+ $('alexWorkspaceLink').href = '/alexa?project=' + encodeURIComponent(projectId);
  $('backToDiscovery').href = '/?project=' + encodeURIComponent(projectId);
  const requestedProject = projectId, requestRevision = revision;
  try {

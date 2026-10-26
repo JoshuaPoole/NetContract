@@ -1,15 +1,33 @@
 'use strict';
-const project = new URLSearchParams(location.search).get('project');
+let project = new URLSearchParams(location.search).get('project');
 const get = id => document.getElementById(id);
-get('connection').textContent = project ? 'Source: Salesforce · hackfest-developer · approved builder project ' + project : 'Open Alex from your saved builder review so it can use the same object and field mappings.';
-get('askAlex').disabled = !project;
-if (project) get('builderLink').href='/salesforce?project='+encodeURIComponent(project);
+get('askAlex').disabled=true;
+async function post(url, payload={}) {
+ const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-LifeAfterCode-Release':'1'},body:JSON.stringify(payload)});
+ const data=await response.json();
+ if (!response.ok) throw new Error(typeof data.detail==='string' ? data.detail : 'Salesforce request failed');
+ return data;
+}
+async function connectPublished() {
+ try {
+  const config=await post(project ? '/api/projects/'+encodeURIComponent(project)+'/alexa/config' : '/api/alexa/config');
+  project=config.project_id;
+  get('connection').textContent='Published Salesforce workspace · '+config.org_alias+' · '+config.object+' · published '+config.published_at;
+  get('askAlex').disabled=false;
+  try {
+  const result=await post('/api/projects/'+encodeURIComponent(project)+'/alexa/incidents');
+  get('incidentNotice').textContent=result.message;
+  for (const record of result.records) {const option=document.createElement('option');option.value=record.id;option.textContent=record.label;get('incidentSelect').append(option);}
+  } catch (error) {get('incidentNotice').textContent=error.message;}
+ } catch (error) {get('connection').textContent=error.message;}
+}
+get('incidentSelect').addEventListener('change',()=>{if(get('incidentSelect').value)get('question').value='Find procedures for the selected incident';});
 get('alexForm').addEventListener('submit', async event => {
  event.preventDefault();
  if (!project) return;
  get('askAlex').disabled=true; get('alexRecords').replaceChildren(); get('alexEvidence').textContent=''; get('alexStatus').textContent='Reading Salesforce…';
  try {
-  const response=await fetch('/api/projects/'+encodeURIComponent(project)+'/alex/ask',{method:'POST',headers:{'Content-Type':'application/json','X-LifeAfterCode-Release':'1'},body:JSON.stringify({question:get('question').value})});
+  const response=await fetch('/api/projects/'+encodeURIComponent(project)+'/alex/ask',{method:'POST',headers:{'Content-Type':'application/json','X-LifeAfterCode-Release':'1'},body:JSON.stringify({question:get('question').value,incident_record_id:get('incidentSelect').value || null})});
   const data=await response.json();
   if (!response.ok) throw new Error(typeof data.detail==='string' ? data.detail : 'Salesforce lookup failed');
   get('alexStatus').textContent=data.reply;
@@ -24,3 +42,5 @@ get('alexForm').addEventListener('submit', async event => {
  } catch (error) {get('alexStatus').textContent=error.message;}
  finally {get('askAlex').disabled=false;}
 });
+
+const workspaceReady=connectPublished();
