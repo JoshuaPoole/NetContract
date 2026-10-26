@@ -27,3 +27,9 @@ This is a real Salesforce incident-to-procedure retrieval path, not the original
 The implementation uses the existing local Salesforce CLI login for **hackfest-developer**. Pull/restart, activate an existing completed sync or deploy-and-sync, then open `/alexa`. Both interfaces remain on one server. The original AWS Alexa competition deployment is untouched.
 
 AWS deployment still needs authenticated hosted Salesforce access and customer/vendor authorization before exposing these endpoints. The local-only boundary is deliberately retained; it is not made public by adding these routes. No live Salesforce or AWS changes were performed during development.
+
+## Voice and evidence presentation
+
+The customer page includes a persistent conversation transcript, optional browser speech input and reply read-out, readable implementation/validation/rollback steps, always-visible session events, source JSON and an on-demand session evidence download. Microphone use starts only from the Speak request button and requires localhost or HTTPS plus browser permission. Speech recognition/read-out availability depends on the browser and can use its external speech services; typed input remains available.
+
+Session events show actual connection/query activity. The page explicitly indicates that no synthetic login or command diagnostics are attached to the Salesforce lookup. The original simulator tool output must still be connected before these events can be presented as node login or command logs; procedure definitions are not substituted for executed command results. Session history remains in browser memory until the user downloads it; it is not persisted to Salesforce.
