@@ -158,3 +158,33 @@ def test_mops_alias_uses_existing_seed_discovery(tmp_path):
     result = discover(tmp_path, 'lab')
     assert sum(row['kind'] == 'dip' for row in result['records']) == 1
     assert next(row for row in result['records'] if row['kind'] == 'dip')['source_file'] == 'mops.json'
+
+
+@pytest.mark.parametrize('executable', ['sf', 'sf.cmd'])
+def test_bulk_csv_declares_matching_crlf_and_preserves_multiline_fields(monkeypatch, executable):
+    import csv
+    import io
+    from pathlib import Path
+
+    rows = [{'Key__c':'NEW-1', 'Name':'First', 'Title__c':'Router "hot", café',
+             'Steps__c':'First\r\nSecond\nThird\rFourth'},
+            {'Key__c':'NEW-2', 'Name':'Second', 'Title__c':'BFD', 'Steps__c':'Inspect peer'}]
+    value = {'org_alias':'hackfest-developer', 'batches':[
+        {'object':'Rtest_DIP__c', 'external_id':'Key__c', 'rows':rows}]}
+    value['review_digest'] = digest(value)
+    monkeypatch.setattr(cli, 'preflight', lambda *a: [])
+    uploads = []
+    def upload(command, *args):
+        assert command == executable
+        assert args[args.index('--line-ending')+1] == 'CRLF'
+        raw = Path(args[args.index('--file')+1]).read_bytes()
+        assert raw.startswith(b'Key__c,Name,Steps__c,Title__c\r\n')
+        assert raw.endswith(b'Inspect peer,BFD\r\n')
+        assert b'\r\r\n' not in raw
+        parsed = list(csv.DictReader(io.StringIO(raw.decode('utf-8'), newline='')))
+        assert parsed == rows  # Commas, quotes, UTF-8 and embedded newlines survive unchanged.
+        uploads.append(raw)
+        return {'jobInfo':{'state':'JobComplete','numberRecordsFailed':0,'numberRecordsProcessed':2}}
+    monkeypatch.setattr(cli, 'run_sf', upload)
+    assert cli.apply(value, value['review_digest'], executable)[0]['processed'] == 2
+    assert len(uploads) == 1

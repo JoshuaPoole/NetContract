@@ -44,12 +44,14 @@ def apply(value, approval, executable):
         for index, batch in enumerate(value['batches']):
             path = Path(folder) / f'{index}.csv'
             with path.open('w', encoding='utf-8', newline='') as stream:
-                writer = csv.DictWriter(stream, fieldnames=sorted({key for row in batch['rows'] for key in row}))
+                # CSV's CRLF records must match the Bulk API job on Linux and Windows.
+                writer = csv.DictWriter(stream, fieldnames=sorted({key for row in batch['rows'] for key in row}),
+                                        lineterminator='\r\n')
                 writer.writeheader()
                 writer.writerows(batch['rows'])
             result = run_sf(executable, 'data', 'upsert', 'bulk', '--sobject', batch['object'],
                             '--external-id', batch['external_id'], '--file', str(path),
-                            '--target-org', ORG, '--wait', '10')
+                            '--target-org', ORG, '--line-ending', 'CRLF', '--wait', '10')
             job = result.get('jobInfo', result)
             receipt = {'object': batch['object'], 'job_id': job.get('id') or result.get('jobId'),
                        'state': job.get('state'), 'failed': job.get('numberRecordsFailed'),
