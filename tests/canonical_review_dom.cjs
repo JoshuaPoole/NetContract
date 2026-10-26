@@ -180,17 +180,7 @@ const change=(element,value,event='change')=>{element.value=value;element.listen
  actionable.run('renderReview('+JSON.stringify(filterPlan)+',true)');
  await actionable.run('refreshPermissionMatrix()');
  assert.equal(actionable.elements.syncProcedureRecords.disabled,false);
- const beforeFilterRevision=actionable.run('revision');
- actionable.elements.reviewFilter.value='approved'; await actionable.trigger('reviewFilter','change');
- assert.equal(actionable.run('reviewRows[0].row.hidden'),false);
- assert.equal(actionable.run('reviewRows[1].row.hidden'),true);
- assert.equal(actionable.run('reviewRows[2].row.hidden'),true);
- assert.equal(actionable.run('revision'),beforeFilterRevision,'filtering is not a review edit');
- assert.equal(actionable.run('reviewSaved'),true);
- actionable.elements.reviewFilter.value='rejected'; await actionable.trigger('reviewFilter','change');
- assert.equal(actionable.run('reviewRows[2].row.hidden'),false);
  await actionable.trigger('showSyncIdentity','click');
- assert.equal(actionable.elements.reviewFilter.value,'all');
  assert.match(actionable.elements.reviewNotice.textContent,/linked_kba_id/);
  actionable.run('reviewPlan.entities[0].fields[0].status="review";changed()');
  assert.equal(actionable.elements.syncProcedureRecords.disabled,true);

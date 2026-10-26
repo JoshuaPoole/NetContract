@@ -1,20 +1,7 @@
 let reviewRows = [];
-let reviewSections = [];
-function applyReviewFilter() {
- const filter = $('reviewFilter').value || 'all';
- let visible = 0;
- for (const item of reviewRows) {
-  item.row.hidden = filter !== 'all' && item.field.status !== filter;
-  if (!item.row.hidden) visible++;
- }
- for (const item of reviewSections) item.section.hidden = filter !== 'all' && !reviewRows.some(row=>row.entity===item.entity && !row.row.hidden);
- $('filterSummary').textContent = visible + ' of ' + reviewRows.length + ' fields shown. Decisions are unchanged by filtering.';
-}
-$('reviewFilter').addEventListener('change', applyReviewFilter);
 $('showSyncIdentity').addEventListener('click', ()=>{
  const identity = reviewRows.find(item=>item.entity.concept==='DIP' && item.field.evidence.includes('#') && ['procedure_id','dip_id','mop_id','sop_id','runbook_id','id'].includes(item.field.source.split('.').pop()));
  if (!identity) { $('recordSyncNotice').textContent='No procedure ID was found in this scan. Rescan the ZIP containing the procedure catalogs.'; return; }
- $('reviewFilter').value='all'; applyReviewFilter();
  identity.row.setAttribute('tabindex','-1'); identity.row.scrollIntoView?.({behavior:'smooth',block:'center'}); identity.row.focus?.();
  $('reviewNotice').textContent='For record sync, approve the Procedure entity and '+identity.field.source.split('.').pop()+', select its unique external ID checkbox, then save. linked_kba_id is a knowledge link, not a procedure ID.';
 });
@@ -45,7 +32,7 @@ function changed() { reviewSaved=false; invalidateBrowserDeployment(); revision+
 function approvedFields() { return (reviewPlan?.entities || []).filter(entity=>entity.status==='approved').reduce((count,entity)=>count+entity.fields.filter(field=>field.status==='approved').length,0); }
 function decision(value, onChange, label) { const select=document.createElement('select'); select.setAttribute('aria-label',label); for (const status of ['review','approved','rejected']) { const option=document.createElement('option'); option.value=status; option.textContent=status; select.append(option); } select.value=value; select.addEventListener('change',()=>{onChange(select.value); changed();}); return select; }
 function renderReview(plan, saved) {
- invalidateBrowserDeployment(); reviewSaved=saved; reviewPlan=plan; $('reviewEntities').replaceChildren(); reviewRows=[]; reviewSections=[];
+ invalidateBrowserDeployment(); reviewSaved=saved; reviewPlan=plan; $('reviewEntities').replaceChildren(); reviewRows=[];
  for (const entity of plan.entities) {
   const section=document.createElement('section'); section.className='entity'; appendText(section,'h3',entity.concept==='DIP' ? 'Procedure (DIP / MOP / SOP / runbook)' : entity.concept);
   section.append(decision(entity.status,value=>{entity.status=value;},entity.concept+' entity decision'));
@@ -57,7 +44,7 @@ function renderReview(plan, saved) {
     key.setAttribute('aria-label',field.source+' unique external ID'); key.addEventListener('change',()=>{field.external_id=key.checked;changed();});
     label.append(key); appendText(label,'span','Unique external ID for record updates'); typeCell.append(label);
    }appendText(row,'td',field.pii_candidate?'Review':'No name signal');appendText(row,'td',field.evidence); const state=document.createElement('td');state.append(decision(field.status,value=>{field.status=value;},field.source+' field decision'));row.append(state);body.append(row); reviewRows.push({row,field,entity}); }
-  table.append(body);wrapper.append(table);section.append(wrapper);$('reviewEntities').append(section); reviewSections.push({section,entity});
+  table.append(body);wrapper.append(table);section.append(wrapper);$('reviewEntities').append(section);
  }
  $('saveReview').disabled=!plan.entities.length; $('exportMetadata').disabled=!saved || !approvedFields();
  updateReviewSummary();
@@ -71,7 +58,6 @@ function updateReviewSummary() {
  const selected = entities.reduce((count, entity) => count + entity.fields.filter(field => field.status === 'approved').length, 0);
  const eligible = approvedFields();
  $('reviewSummary').textContent = approvedEntities.length + ' approved entities · ' + selected + ' selected fields · ' + eligible + ' fields ready for Salesforce.' + (selected > eligible ? ' Approve the parent entity for the remaining selected fields.' : '');
- applyReviewFilter();
  updateReleaseButtons();
 }
 async function saveCanonicalReview() {
