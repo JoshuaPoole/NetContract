@@ -1,0 +1,11 @@
+# Builder and Alex on one server
+
+`/` is the repository builder; `/alex?project=PROJECT_ID` is the Salesforce procedure lookup. `/alexa` is an alias in this application. Both are served by the same FastAPI process. Salesforce stores the records and is not required to embed or host either frontend.
+
+From the builder's saved Salesforce review, follow **Open Alex · query synced Salesforce records**. Ask for a procedure topic or ID, for example **Find BFD procedures** or **Find cyber procedures**. Every lookup reads Salesforce through the existing CLI adapter using the same reviewed target object, identity and approved fields used by record sync. Salesforce record IDs, modification times, matched terms and retrieval provenance are shown. There is no private-catalog or BFD-simulation fallback.
+
+Approving and syncing only procedure IDs proves record identity lookup, but does not supply titles or procedure steps. Approve and sync those fields too to retrieve their content. The returned data is read from Salesforce, including changes made there, within the IDs present in the reviewed source catalog. Unapproved fields and unrelated IDs are excluded. The lookup is bounded at 1,000 rows; an incomplete or oversized query is an error.
+
+This is deliberately a procedure retrieval happy path. It does not diagnose a live or simulated node, choose a remediation autonomously, execute steps or grant approval. A request naming a node asks for clarification instead of claiming to have gathered diagnostics. Several matching procedures remain review candidates. The original `/mim` incident/evidence reader remains separate; its structured decision logic and original voice/MCP investigation agent are not silently replaced or represented as connected by this lookup.
+
+Test locally with the builder's current CLI login for **hackfest-developer**, after pulling/restarting. The same-origin/local authorization boundary remains in place. Deploying these routes on AWS still requires an authenticated Salesforce server adapter or equivalent securely configured authorization; this change does not enable public access to workstation CLI credentials. No AWS instance or existing `/alexa` submission was changed. When hosting is ready, both paths belong on the same host, and Salesforce embedding is optional.

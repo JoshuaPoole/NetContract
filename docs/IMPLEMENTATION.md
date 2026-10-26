@@ -50,3 +50,7 @@ The repository inventory discovers supported seed JSON without executing generat
 ## Approved builder data sync
 
 Procedure field review now includes an explicit unique external-ID flag. The browser previews a server-derived record plan and can opt into syncing only approved source fields after confirmed schema deployment. The existing bulk upsert/preflight helper handles writes; partial success retains the schema outcome. Runtime remains local/CLI-authenticated until an AWS service adapter is configured. See BUILDER_RECORD_SYNC.md.
+
+## Same-server Alex procedure retrieval
+
+`alex_workspace.py` and `/alex` use the builder project identity to select its approved Salesforce object, fields and source IDs. Typed topic lookup reads Salesforce and presents source record evidence without a simulation fallback. This is retrieval, not the original node-investigation agent or execution. Both builder and Alex run in one process; the hosted Salesforce authentication boundary remains pending. See ALEX_WORKSPACE.md.

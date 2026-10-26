@@ -9,8 +9,8 @@
 <header><div class="brand">LifeAfterCode<span style="color:#7fe0bc"> / DevOps</span></div><span class="tag">Legacy code → reviewed evidence</span></header>
 <main><p><a id="backToDiscovery" href="/">← Back to discovered contracts &amp; Terraform</a></p>
 <section class="card" aria-labelledby="frontendHeading">
-<h2 id="frontendHeading">Hosted MIM frontend</h2>
-<p>Reuse the existing frontend and its service requests inside a MIM Workspace tab in Salesforce. Enter its full HTTPS URL, such as the existing /alexa page. Its Python runtime stays on your company-controlled host.</p>
+<h2 id="frontendHeading">Optional Salesforce embedded frontend</h2>
+<p>The builder at / and Alex at /alex run on the same application server. Embedding a frontend inside Salesforce is optional. Enter its full HTTPS URL, such as the existing /alexa page. Its Python runtime stays on your company-controlled host.</p>
 <label for="frontendUrl">Frontend URL</label>
 <input id="frontendUrl" type="url" placeholder="https://your-mim-service.example/alexa" style="width:min(100%,700px)" autocomplete="off">
 <div class="actions"><button id="saveFrontend" class="secondary">Save frontend URL</button><a id="previewFrontend" target="_blank" rel="noopener noreferrer" hidden>Open hosted frontend / sign in</a></div>
@@ -46,6 +46,7 @@
 
 <section aria-labelledby="recordSyncHeading"><h3 id="recordSyncHeading">Approved procedure records</h3>
 <button id="showSyncIdentity" class="secondary">Show required procedure ID</button>
+<p><a id="alexWorkspaceLink" href="/alex">Open Alex · query synced Salesforce records</a></p>
 <p id="recordSyncNotice">Save the Procedure review to preview record updates.</p>
 <label><input type="checkbox" id="syncProcedureRecords" disabled> After successful schema deployment, sync the procedure records using only the approved fields</label>
 <p>Records use the approved unique external ID, so repeat syncs update matching records. Missing source properties are preserved. This is data sync, not approval to execute a procedure.</p></section>

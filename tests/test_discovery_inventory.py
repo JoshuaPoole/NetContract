@@ -68,7 +68,7 @@ def test_landing_page_is_discovery_only_and_salesforce_has_its_own_route():
     assert 'id="businessRows"' not in review.text
     for asset in ['common.js', 'discovery.js', 'salesforce-review.js', 'salesforce-deploy.js', 'discovery.css']:
         assert client.get('/assets/' + asset).status_code == 200
-    assert client.get('/alex').status_code == 404
+    assert client.get('/alex').status_code == 200
 
 
 def test_discovery_snapshot_can_be_reopened_after_salesforce_navigation(tmp_path, monkeypatch):

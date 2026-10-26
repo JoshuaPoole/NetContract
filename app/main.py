@@ -25,12 +25,15 @@ from .canonical_project_api import router as canonical_project_router
 
 from .mim_incidents import router as mim_incidents_router
 
+from .alex_workspace import router as alex_router
+
 app = FastAPI(title="LifeAfterCode DevOps")
 app.mount("/assets", StaticFiles(directory=Path(__file__).parent / "assets"), name="assets")
 app.include_router(canonical_preview_router)
 app.include_router(canonical_project_router)
 app.include_router(salesforce_browser_router)
 app.include_router(mim_incidents_router)
+app.include_router(alex_router)
 DATA = Path(os.environ.get("MAPPER_WORKSPACE", "workspace"))
 DATA.mkdir(parents=True, exist_ok=True)
 
@@ -38,7 +41,7 @@ DATA.mkdir(parents=True, exist_ok=True)
 @app.middleware("http")
 async def fresh_browser_assets(request, call_next):
     response = await call_next(request)
-    if request.url.path in {"/", "/salesforce", "/mim"} or request.url.path.startswith("/assets/"):
+    if request.url.path in {"/", "/salesforce", "/mim", "/alex", "/alexa"} or request.url.path.startswith("/assets/"):
         response.headers["Cache-Control"] = "no-store"
     return response
 

@@ -73,3 +73,5 @@ Connect imported node observations and the Salesforce DIP catalog to MIM decisio
 DIPs, MOPs, SOPs and runbooks now share a [Procedure discovery and review view](docs/PROCEDURES.md), including structured JSON catalogs on the Salesforce review page. Rescan older uploads after pulling this update.
 
 The builder can [sync reviewed procedure records after schema deployment](docs/BUILDER_RECORD_SYNC.md), using an approved unique source ID and only approved fields. The builder stays outside Salesforce.
+
+[Alex Salesforce procedure lookup](docs/ALEX_WORKSPACE.md) runs at `/alex` on the same server as the builder. Open it from a saved review to query the same synced Salesforce object and approved fields.
