@@ -61,3 +61,5 @@ Successful record sync now persists a frozen Salesforce mapping and source-ID sc
 
 
 The `/alexa` workspace now includes explicit BFD and cyber lab investigations over published Salesforce procedures. `node_investigation.py` pins evidence and two-step simulation confirmation; `command_fixtures.py` reuses the original pure BFD fixture/parser, while `cyber_lab.py` produces bounded command previews and synthetic results only. The new eight-node inventory is demo configuration, not discovered infrastructure. See ALEX_WORKSPACE.md for scenario requests and runtime limitations.
+
+Hosted judge access is opt-in through `app/judge_access.py`, with a private verifier configured by `python -m scripts.configure_judge_access`. The Caddy password is independently verified in the app; exact HTTPS origin, same-origin writes and existing Salesforce review gates are retained. Public record previews and job polling use the same authenticated context. See JUDGE_HOSTING.md.

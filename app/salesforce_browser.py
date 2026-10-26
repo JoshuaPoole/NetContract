@@ -1,7 +1,6 @@
-"""Local browser adapter over the saved canonical review and existing CLI release."""
+"""Authenticated browser adapter over saved reviews and the existing CLI release."""
 from copy import deepcopy
 import hashlib
-from ipaddress import ip_address
 import json
 import os
 from pathlib import Path
@@ -18,6 +17,7 @@ import xml.etree.ElementTree as ET
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
+from .judge_access import local_request, hosted_request
 from .canonical_project_api import load_saved_review, reviewed_metadata_bundle, project_paths
 from .reviewed_metadata import export_reviewed_metadata
 from scripts.salesforce_deploy_playbook import (
@@ -46,29 +46,21 @@ class ReleaseRequest(BaseModel):
     record_digest: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
-def local_request(request):
-    try:
-        return (request.url.hostname in {'localhost', '127.0.0.1', '::1'}
-                and ip_address(request.client.host).is_loopback)
-    except (ValueError, AttributeError):
-        return False
-
-
 def capability(request):
-    if os.environ.get('LIFEAFTERCODE_BROWSER_DEPLOY') != '1' or not local_request(request):
-        return False, 'Start python run.py on this computer at localhost to enable browser deployment.'
+    if os.environ.get('LIFEAFTERCODE_BROWSER_DEPLOY') != '1' or not (local_request(request) or hosted_request(request)):
+        return False, 'Use the local tunnel or configured HTTPS judge login to enable Salesforce operations.'
     if not (shutil.which('sf.cmd') or shutil.which('sf')):
         return False, 'Install Salesforce CLI and authenticate hackfest-developer on the computer running this app.'
-    return True, 'Uses the Salesforce CLI login on this computer for hackfest-developer.'
+    return True, 'Uses this server’s Salesforce CLI login for hackfest-developer; reviewed judge deployment is enabled.' if hosted_request(request) else 'Uses the Salesforce CLI login on this computer for hackfest-developer.'
 
 
 def authorize_local_page(request):
-    if os.environ.get('LIFEAFTERCODE_BROWSER_DEPLOY') != '1' or not local_request(request):
-        raise HTTPException(403, 'Configure releases from the local review page started by python run.py')
+    if os.environ.get('LIFEAFTERCODE_BROWSER_DEPLOY') != '1' or not (local_request(request) or hosted_request(request)):
+        raise HTTPException(403, 'Use the local review page or authenticated HTTPS judge site')
     origin = urlsplit(request.headers.get('origin', ''))
     if (request.headers.get('x-lifeaftercode-release') != '1'
             or origin.scheme != request.url.scheme or origin.netloc != request.url.netloc):
-        raise HTTPException(403, 'Release requests must come from this local review page')
+        raise HTTPException(403, 'Release requests must come from this review page')
 
 
 def authorize_release(request):
@@ -257,8 +249,8 @@ def deploy_release(project_id: str, payload: ReleaseRequest, request: Request, t
 
 @router.get('/api/projects/{project_id}/salesforce/jobs/{job_id}')
 def release_job(project_id: str, job_id: str, request: Request):
-    if not local_request(request):
-        raise HTTPException(403, 'Release jobs are available on the local workstation only')
+    if not (local_request(request) or hosted_request(request)):
+        raise HTTPException(403, 'Release jobs require the local tunnel or authenticated judge access')
     with STATE_LOCK:
         job = JOBS.get(job_id)
         if not job or job['project_id'] != project_id:
@@ -268,8 +260,8 @@ def release_job(project_id: str, job_id: str, request: Request):
 
 @router.get('/api/projects/{project_id}/salesforce/records')
 def record_preview(project_id: str, request: Request):
-    if not local_request(request):
-        raise HTTPException(403, 'Record previews require the local builder')
+    if not (local_request(request) or hosted_request(request)):
+        raise HTTPException(403, 'Record previews require the local tunnel or authenticated judge access')
     from .procedure_sync import record_plan, summary
     try:
         return summary(record_plan(project_id))

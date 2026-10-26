@@ -45,7 +45,7 @@ When approved and synced, `target_environment_order` is read from Salesforce and
 
 The implementation uses the existing local Salesforce CLI login for **hackfest-developer**. Pull/restart, activate an existing completed sync or deploy-and-sync, then open `/alexa`. Both interfaces remain on one server. The original AWS Alexa competition deployment is untouched.
 
-AWS deployment still needs authenticated hosted Salesforce access and customer/vendor authorization before exposing these endpoints. The local-only boundary is deliberately retained; it is not made public by adding these routes. No live Salesforce or AWS changes were performed during development.
+Hosted judge access is now an explicit opt-in using Caddy plus an independently verified app login. See [judge hosting](JUDGE_HOSTING.md). Without that configuration, the original local-only Salesforce boundary remains. The hosted demo uses the EC2 service user’s existing CLI login; no live Salesforce or AWS changes were performed during development.
 
 ## Voice and evidence presentation
 

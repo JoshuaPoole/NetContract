@@ -94,7 +94,7 @@ def test_local_launch_uses_discovery_app_and_explicit_workspace(tmp_path, monkey
     run.main(['serve', '--workspace', str(tmp_path), '--port', '8123'])
     assert run.os.environ['MAPPER_WORKSPACE'] == str(tmp_path.resolve())
     assert run.os.environ['LIFEAFTERCODE_BROWSER_DEPLOY'] == '1'
-    assert calls == [(('app.main:app',), {'host': '127.0.0.1', 'port': 8123, 'reload': False})]
+    assert calls == [(('app.main:app',), {'host': '127.0.0.1', 'port': 8123, 'reload': False, 'proxy_headers': True, 'forwarded_allow_ips': '127.0.0.1,::1'})]
 
 
 def test_frontend_flag_is_reused_for_both_validation_and_deployment(tmp_path, monkeypatch):

@@ -12,7 +12,7 @@ STATIC_FILES = (
     'app/salesforce.html', 'app/assets/discovery.css', 'app/assets/common.js',
     'app/assets/discovery.js', 'app/assets/salesforce-review.js', 'app/assets/salesforce-deploy.js',
     'sfdx-project.json', 'docs/SALESFORCE_PLAYBOOK.md', 'docs/IMPLEMENTATION.md',
-    'tests/test_procedure_catalog.py', 'docs/PROCEDURES.md', 'docs/BUILDER_RECORD_SYNC.md', 'docs/ALEX_WORKSPACE.md', 'app/alex.html', 'app/assets/alex.js', 'app/assets/alexa.css', 'data/network_command_fixtures.json', 'data/node_lab.json', 'tests/test_node_investigation.py', 'tests/test_alex_workspace.py', 'tests/test_voice_workspace_ui.py', 'tests/test_published_workspace.py', 'tests/test_procedure_sync.py',
+    'tests/test_procedure_catalog.py', 'docs/PROCEDURES.md', 'docs/BUILDER_RECORD_SYNC.md', 'docs/ALEX_WORKSPACE.md', 'docs/JUDGE_HOSTING.md', 'scripts/configure_judge_access.py', 'tests/test_judge_access.py', 'app/alex.html', 'app/assets/alex.js', 'app/assets/alexa.css', 'data/network_command_fixtures.json', 'data/node_lab.json', 'tests/test_node_investigation.py', 'tests/test_alex_workspace.py', 'tests/test_voice_workspace_ui.py', 'tests/test_published_workspace.py', 'tests/test_procedure_sync.py',
     'docs/SEED_IMPORT.md', 'scripts/seeded_network_sf.py', 'tests/test_seeded_network_import.py',
     'docs/MIM_NETWORK_DECISIONS.md', 'tests/test_mim_network_context.py',
     'docs/MIM_WORKSPACE.md', 'docs/MIM_INCIDENTS.md', 'app/mim.html',

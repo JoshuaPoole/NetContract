@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
       - run: python -m pip install -r requirements.txt ruff==0.13.3
       - name: Check changed runtime code
-        run: python -m ruff check run.py app/main.py app/published_workspace.py app/alex_workspace.py app/node_investigation.py app/cyber_lab.py app/command_fixtures.py app/procedure_sync.py app/procedure_catalog.py app/intermediate_representation.py app/canonical_entities.py app/canonical_evidence.py app/contract_classification.py app/business_discovery.py app/ir_salesforce_bridge.py app/salesforce.py app/mim_incidents.py app/mim_network_context.py app/seeded_network_import.py scripts/seeded_network_sf.py app/discovery_inventory.py app/terraform_inventory.py app/salesforce_browser.py app/canonical_project_api.py scripts/package_submission.py --select E4,E7,E9,F
+        run: python -m ruff check run.py app/main.py app/judge_access.py scripts/configure_judge_access.py app/published_workspace.py app/alex_workspace.py app/node_investigation.py app/cyber_lab.py app/command_fixtures.py app/procedure_sync.py app/procedure_catalog.py app/intermediate_representation.py app/canonical_entities.py app/canonical_evidence.py app/contract_classification.py app/business_discovery.py app/ir_salesforce_bridge.py app/salesforce.py app/mim_incidents.py app/mim_network_context.py app/seeded_network_import.py scripts/seeded_network_sf.py app/discovery_inventory.py app/terraform_inventory.py app/salesforce_browser.py app/canonical_project_api.py scripts/package_submission.py --select E4,E7,E9,F
       - run: python -m compileall -q app scripts run.py
       - name: Install Lightning compiler for metadata checks
         run: npm install --prefix /tmp/lifeaftercode-lwc --no-save --ignore-scripts @lwc/compiler@9.5.2

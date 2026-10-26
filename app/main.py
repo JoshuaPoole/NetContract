@@ -27,7 +27,10 @@ from .mim_incidents import router as mim_incidents_router
 
 from .alex_workspace import router as alex_router
 
+from .judge_access import judge_access
+
 app = FastAPI(title="LifeAfterCode DevOps")
+app.middleware("http")(judge_access)
 app.mount("/assets", StaticFiles(directory=Path(__file__).parent / "assets"), name="assets")
 app.include_router(canonical_preview_router)
 app.include_router(canonical_project_router)

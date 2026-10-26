@@ -77,3 +77,5 @@ The builder can [sync reviewed procedure records after schema deployment](docs/B
 [Alex Salesforce procedure lookup](docs/ALEX_WORKSPACE.md) runs at `/alex` on the same server as the builder. Open it from a saved review to query the same synced Salesforce object and approved fields.
 
 The customer `/alexa` workspace now reads a durable published mapping from the builder. Successful deploy-and-sync publishes automatically; earlier completed imports can be activated with Salesforce read-back verification. Draft builder edits remain separate. See [workspace setup](docs/ALEX_WORKSPACE.md).
+
+Judge-only HTTPS access on EC2: [setup and authorization](docs/JUDGE_HOSTING.md). Uses the existing reviewed Salesforce workflow and CLI alias; local SSH tunnel access remains available.
