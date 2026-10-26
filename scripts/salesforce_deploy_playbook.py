@@ -18,17 +18,59 @@ NS = {"sf": "http://soap.sforce.com/2006/04/metadata"}
 SFNS = NS["sf"]
 
 
+class SalesforceCommandError(RuntimeError):
+    def __init__(self, operation, messages, exit_code):
+        self.messages = messages
+        details = '; '.join(messages) or f'No error message returned (exit {exit_code})'
+        super().__init__(f'Salesforce command failed [{operation}]: {details[:1200]}')
+
+
+def cli_messages(value):
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [message for item in value for message in cli_messages(item)]
+    if not isinstance(value, dict):
+        return []
+    for key in ('failures', 'errors'):
+        messages = cli_messages(value.get(key))
+        if messages:
+            return messages
+    for key in ('message', 'errorMessage', 'error', 'problem'):
+        messages = cli_messages(value.get(key))
+        if messages:
+            return messages
+    return []
+
+
 def run_sf(executable, *args, cwd=None):
-    command = [executable, *args, "--json"]
+    command = [executable, *args, '--json']
     result = subprocess.run(command, cwd=cwd, text=True, capture_output=True, timeout=900, check=False)
+    operation = ' '.join(args[:3])
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
-        raise RuntimeError(f"Salesforce CLI did not return JSON (exit {result.returncode}): {result.stderr[:500]}") from exc
-    if result.returncode or payload.get("status") != 0:
-        details = payload.get("message") or (payload.get("result") or {}).get("errorMessage") or result.stderr
-        raise RuntimeError(f"Salesforce command failed: {str(details)[:800]}")
-    return payload.get("result") or {}
+        raise RuntimeError(f'Salesforce CLI did not return JSON for {operation} (exit {result.returncode}): {result.stderr[:500]}') from exc
+    if result.returncode or payload.get('status') != 0:
+        messages = cli_messages(payload.get('result')) or cli_messages(payload) or cli_messages(result.stderr)
+        if not messages and payload.get('name'):
+            messages = [str(payload['name'])]
+        raise SalesforceCommandError(operation, messages, result.returncode)
+    return payload.get('result') or {}
+
+
+def assign_permissions(executable, org, permission_name):
+    try:
+        run_sf(executable, 'org', 'assign', 'permset', '--name', permission_name, '--target-org', org)
+    except SalesforceCommandError as exc:
+        # Repeat deployments reuse this permission set. Suppress only explicit
+        # already-assigned errors; the field verification below still runs.
+        if not exc.messages or not all('already assigned' in message.casefold()
+                or 'duplicate permissionsetassignment' in message.casefold() for message in exc.messages):
+            raise
+        print('Generated permission set was already assigned; verifying current field access')
+        return
+    print('Generated permission set assigned to authenticated org user')
 
 
 def inspect_objects(source):
@@ -275,8 +317,7 @@ def main(argv=None):
             return
         print(f"Deployment succeeded: {result.get('id')} (permission set: {permission_name})")
         if args.assign_to_current_user:
-            run_sf(executable, "org", "assign", "permset", "--name", permission_name, "--target-org", args.org)
-            print("Generated permission set assigned to authenticated org user")
+            assign_permissions(executable, args.org, permission_name)
     verify_fields(executable, args.org, objects)
 
 

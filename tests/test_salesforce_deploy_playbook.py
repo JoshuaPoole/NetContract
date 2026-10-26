@@ -171,3 +171,29 @@ def test_workspace_reuses_hosted_frontend_and_preserves_existing_app_identity(tm
     assert tabs[0] in {item.findtext('s:tab', namespaces=ns) for item in permissions.findall('s:tabSettings', ns)}
     assert len(permissions.findall('s:objectPermissions', ns)) == 1
     assert len(permissions.findall('s:fieldPermissions', ns)) == 1
+
+
+def test_assignment_failure_array_has_actionable_error(monkeypatch):
+    import json
+    from types import SimpleNamespace
+    monkeypatch.setattr(playbook.subprocess, 'run', lambda *a, **k: SimpleNamespace(
+        returncode=1, stdout=json.dumps({'status': 1, 'result': {'failures': [{'name': 'demo-user', 'message': 'Permission set already assigned'}]}}), stderr=''))
+    with pytest.raises(playbook.SalesforceCommandError, match='org assign permset.*already assigned'):
+        playbook.run_sf('sf', 'org', 'assign', 'permset')
+    playbook.assign_permissions('sf','hackfest-developer','ScopedAccess')
+
+
+def test_real_assignment_failure_is_not_suppressed(monkeypatch):
+    import json
+    from types import SimpleNamespace
+    monkeypatch.setattr(playbook.subprocess, 'run', lambda *a, **k: SimpleNamespace(
+        returncode=1, stdout=json.dumps({'status': 1, 'result': {'failures': [{'message': 'Insufficient access'}]}}), stderr=''))
+    with pytest.raises(playbook.SalesforceCommandError, match='Insufficient access'):
+        playbook.assign_permissions('sf','hackfest-developer','ScopedAccess')
+
+
+def test_empty_cli_error_still_names_failed_stage(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(playbook.subprocess, 'run', lambda *a, **k: SimpleNamespace(returncode=1, stdout='{"status":1,"result":{}}', stderr=''))
+    with pytest.raises(playbook.SalesforceCommandError, match='org assign permset.*exit 1'):
+        playbook.assign_permissions('sf','hackfest-developer','ScopedAccess')
