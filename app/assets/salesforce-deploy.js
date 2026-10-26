@@ -1,5 +1,15 @@
 let permissionSnapshot = null;
 let recordSnapshot = null;
+let recordPreviewError = '';
+function recordSyncPrerequisite() {
+ const entity = reviewPlan?.entities.find(item=>item.concept==='DIP');
+ if (!entity || entity.status!=='approved') return 'Approve the Procedure entity to enable record sync.';
+ const keys = entity.fields.filter(field=>field.status==='approved' && field.external_id);
+ if (keys.length!==1) return 'Approve exactly one procedure ID (such as dip_id) and select its unique external ID checkbox. linked_kba_id is a knowledge link, not a procedure ID.';
+ if (!reviewSaved) return 'Save your current approvals to load the record sync preview.';
+ return recordSnapshot ? '' : (recordPreviewError || 'Loading record preview; save and retry if it does not appear.');
+}
+
 let permissionRequest = 0;
 let releaseBusy = false;
 let releaseValidated = false;
@@ -12,7 +22,12 @@ function updateReleaseButtons() {
  $('validateSalesforce').disabled = reviewSaving || releaseBusy || frontendDirty || frontendSaving || !approvedFields();
  $('deploySalesforce').disabled = !ready || !releaseValidated;
  $('assignPermissionSet').disabled = releaseBusy;
- $('syncProcedureRecords').disabled = releaseBusy || !recordSnapshot || !reviewSaved;
+ const syncReason = recordSyncPrerequisite();
+ $('syncProcedureRecords').disabled = releaseBusy || !!syncReason || !recordSnapshot || !reviewSaved;
+ $('syncProcedureRecords').setAttribute('title', releaseBusy ? 'Wait for the current Salesforce operation.' : syncReason || 'Ready to sync the previewed records after deployment.');
+ if (releaseBusy) $('recordSyncNotice').textContent = 'Wait for the current Salesforce operation to finish.';
+ else if (syncReason) $('recordSyncNotice').textContent = syncReason;
+ else if (recordSnapshot) $('recordSyncNotice').textContent = 'Ready: ' + recordSnapshot.record_count + ' records → ' + recordSnapshot.object + ' · match by ' + recordSnapshot.external_id + '. Select the checkbox to include record sync with deployment.';
  $('saveAndValidate').disabled = reviewSaving || releaseBusy || frontendDirty || frontendSaving || !approvedFields();
  $('frontendUrl').disabled = releaseBusy || frontendSaving;
  $('saveFrontend').disabled = releaseBusy || frontendSaving;
@@ -21,6 +36,7 @@ function invalidateBrowserDeployment() {
  permissionRequest++;
  permissionSnapshot = null;
  recordSnapshot = null;
+ recordPreviewError = '';
  $('syncProcedureRecords').checked = false;
  $('recordSyncNotice').textContent = 'Save the Procedure review to preview record updates.';
  releaseValidated = false;
@@ -46,10 +62,12 @@ async function refreshPermissionMatrix() {
    const records = await readResponse(await fetch('/api/projects/' + encodeURIComponent(projectId) + '/salesforce/records'));
    if (requestedProject !== projectId || requestRevision !== revision || requestNumber !== permissionRequest) return;
    recordSnapshot = records;
+   recordPreviewError = '';
    $('recordSyncNotice').textContent = records.record_count + ' records → ' + records.object + ' · match by ' + records.external_id + ' · fields: ' + records.fields.join(', ');
   } catch (error) {
    if (requestedProject !== projectId || requestRevision !== revision || requestNumber !== permissionRequest) return;
    recordSnapshot = null;
+   recordPreviewError = error.message;
    $('recordSyncNotice').textContent = error.message;
   }
   releaseValidated = false;

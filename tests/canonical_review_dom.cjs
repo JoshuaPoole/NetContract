@@ -173,6 +173,28 @@ const change=(element,value,event='change')=>{element.value=value;element.listen
  assert.match(actionable.elements.reviewEntities.children[0].children[0].textContent,/Procedure/);
  assert.equal(actionable.elements.reviewEntities.children[0].children[4].children[0].children[1].children[0].children[0].textContent,'ticket');
 
+ const filterPlan={repository:'test',repository_id:'hash',entities:[{concept:'DIP',status:'approved',source_representations:['MOP'],evidence:['data/mops.json#'],fields:[
+  {source:'MOP.dip_id',target:'Dip_Id__c',data_type:'Text',external_id:true,evidence:'data/mops.json#/0/dip_id',pii_candidate:false,status:'approved'},
+  {source:'MOP.title',target:'Title__c',data_type:'Text',evidence:'data/mops.json#/0/title',pii_candidate:false,status:'review'},
+  {source:'MOP.service',target:'Service__c',data_type:'Text',evidence:'data/mops.json#/0/service',pii_candidate:false,status:'rejected'}]}]};
+ actionable.run('renderReview('+JSON.stringify(filterPlan)+',true)');
+ await actionable.run('refreshPermissionMatrix()');
+ assert.equal(actionable.elements.syncProcedureRecords.disabled,false);
+ const beforeFilterRevision=actionable.run('revision');
+ actionable.elements.reviewFilter.value='approved'; await actionable.trigger('reviewFilter','change');
+ assert.equal(actionable.run('reviewRows[0].row.hidden'),false);
+ assert.equal(actionable.run('reviewRows[1].row.hidden'),true);
+ assert.equal(actionable.run('reviewRows[2].row.hidden'),true);
+ assert.equal(actionable.run('revision'),beforeFilterRevision,'filtering is not a review edit');
+ assert.equal(actionable.run('reviewSaved'),true);
+ actionable.elements.reviewFilter.value='rejected'; await actionable.trigger('reviewFilter','change');
+ assert.equal(actionable.run('reviewRows[2].row.hidden'),false);
+ await actionable.trigger('showSyncIdentity','click');
+ assert.equal(actionable.elements.reviewFilter.value,'all');
+ assert.match(actionable.elements.reviewNotice.textContent,/linked_kba_id/);
+ actionable.run('reviewPlan.entities[0].fields[0].status="review";changed()');
+ assert.equal(actionable.elements.syncProcedureRecords.disabled,true);
+ assert.match(actionable.elements.recordSyncNotice.textContent,/procedure ID/);
  console.log('Discovery, separate Salesforce review, permissions matrix, validation/deploy controls and race checks passed');
 })().catch(error=>{console.error(error);process.exitCode=1;});
 

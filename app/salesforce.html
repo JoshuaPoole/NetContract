@@ -34,6 +34,8 @@
 </div>
 <p id="reviewNotice" role="status" aria-live="polite">Loading source-backed candidates…</p>
 <p id="releaseNotice" role="status" aria-live="polite">Validation is required before deployment.</p>
+<label for="reviewFilter">Show fields</label><select id="reviewFilter"><option value="all">All decisions</option><option value="approved">Approved only</option><option value="review">Needs review only</option><option value="rejected">Rejected only</option></select>
+<p>Approval dropdowns change decisions. This filter changes only which fields are displayed.</p><p id="filterSummary" role="status"></p>
 <div id="reviewEntities"></div></section>
 <section class="card" aria-labelledby="permissionHeading">
 <div class="section-head"><h2 id="permissionHeading">Salesforce permissions &amp; deployment</h2><span class="badge">Target: hackfest-developer</span></div>
@@ -45,6 +47,7 @@
 <label><input type="checkbox" id="assignPermissionSet"> Assign this permission set to the currently authenticated Salesforce CLI user after deployment</label>
 
 <section aria-labelledby="recordSyncHeading"><h3 id="recordSyncHeading">Approved procedure records</h3>
+<button id="showSyncIdentity" class="secondary">Show required procedure ID</button>
 <p id="recordSyncNotice">Save the Procedure review to preview record updates.</p>
 <label><input type="checkbox" id="syncProcedureRecords" disabled> After successful schema deployment, sync the procedure records using only the approved fields</label>
 <p>Records use the approved unique external ID, so repeat syncs update matching records. Missing source properties are preserved. This is data sync, not approval to execute a procedure.</p></section>
