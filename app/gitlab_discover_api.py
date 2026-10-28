@@ -1,23 +1,12 @@
-"""Opt-in, loopback-only GitLab MCP discovery endpoint.
-
-The existing ZIP upload endpoint is unchanged. This endpoint uses the local
-GitLabCommunity stdio server and persists the same review-only artifacts.
-"""
-import hashlib
-import json
+"""Opt-in, loopback-only GitLab MCP discovery using the existing ZIP scanner."""
+import io
 import os
-import uuid
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 
-from .architecture_workflow import ArchitectureWorkflow, Evidence, Stage, StageDecision
-from .discovery_inventory import build_inventory_from_entries
-from .gitlab_mcp_local import discover_input_via_local_mcp
-from .intermediate_representation import build_repository_ir_entries
-from .ir_salesforce_bridge import ir_to_analysis
+from .gitlab_mcp_local import discover_via_local_mcp
 from .judge_access import local_request
-from .business_discovery import discover_business_entries
 
 router = APIRouter()
 
@@ -35,38 +24,13 @@ async def discover_gitlab(request: Request, source: GitLabDiscoveryRequest):
     if not allowed or source.project_path != allowed:
         raise HTTPException(403, "GitLab project is not allowlisted")
     try:
-        source_input = await discover_input_via_local_mcp(source.project_path, source.ref)
-        entries = list(source_input.entries())
-        digest = hashlib.sha256(
-            json.dumps(
-                {"project": source.project_path, "ref": source.ref, "files": entries},
-                separators=(",", ":"), ensure_ascii=False,
-            ).encode("utf-8")
-        ).hexdigest()
-        project_id = uuid.uuid4().hex
-        ir = build_repository_ir_entries(entries, source.project_path)
-        business = discover_business_entries(entries, source.project_path)
-        inventory = build_inventory_from_entries(
-            entries, business["blueprint"]["business_contracts"], business["warnings"]
-        )
-        analysis = ir_to_analysis(ir)
-        analysis.repository_id = digest
-        from .main import DATA
-        (DATA / f"{project_id}.json").write_text(analysis.model_dump_json(indent=2))
-        (DATA / f"{project_id}.ir.json").write_text(ir.model_dump_json(indent=2))
-        (DATA / f"{project_id}.discovery.json").write_text(json.dumps(inventory))
-        workflow = ArchitectureWorkflow(
-            source_kind="repository", source_digest=digest,
-            decisions=[StageDecision(
-                stage=Stage.DISCOVER,
-                evidence=[Evidence(source_file=source.project_path, reference="sha256:" + digest)],
-                proposal={"candidate_count": len(ir.nodes)}, validated=True,
-            )],
-        )
-        (DATA / f"{project_id}.workflow.json").write_text(workflow.model_dump_json(indent=2))
-        return {"project_id": project_id, "analysis": analysis, "ir": ir.model_dump(),
-                "inventory": inventory, "source": {"kind": "gitlab_mcp",
-                "project_path": source.project_path, "ref": source.ref}}
-    except (ValueError, RuntimeError):
-        # Avoid exposing subprocess logs, remote errors, or credentials to HTTP clients.
+        archive = await discover_via_local_mcp(source.project_path, source.ref)
+        if len(archive) > 20_000_000:
+            raise ValueError("GitLab snapshot exceeds upload limit")
+        # Reuse the existing ZIP scanners and review artifacts.
+        from .main import analyze
+        result = await analyze(UploadFile(file=io.BytesIO(archive), filename="gitlab-snapshot.zip"))
+        result["source"] = {"kind": "gitlab_mcp", "project_path": source.project_path, "ref": source.ref}
+        return result
+    except (ValueError, RuntimeError, HTTPException):
         raise HTTPException(502, "GitLab MCP discovery failed; inspect sanitized server logs") from None
