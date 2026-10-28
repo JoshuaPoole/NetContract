@@ -28,6 +28,7 @@ from .mim_incidents import router as mim_incidents_router
 from .alex_workspace import router as alex_router
 
 from .judge_access import judge_access
+from .gitlab_discover_api import router as gitlab_discover_router
 
 app = FastAPI(title="LifeAfterCode DevOps")
 app.middleware("http")(judge_access)
@@ -37,6 +38,7 @@ app.include_router(canonical_project_router)
 app.include_router(salesforce_browser_router)
 app.include_router(mim_incidents_router)
 app.include_router(alex_router)
+app.include_router(gitlab_discover_router)
 DATA = Path(os.environ.get("MAPPER_WORKSPACE", "workspace"))
 DATA.mkdir(parents=True, exist_ok=True)
 
